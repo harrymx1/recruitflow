@@ -431,6 +431,7 @@ Untuk menghindari kesalahpahaman lintas dokumen, berikut prinsip yang berlaku di
 - Relevansi pencarian ("Paling Relevan") menggunakan pencocokan teks pada judul, deskripsi, dan skill lowongan — bukan sistem rekomendasi berbasis riwayat pengguna.
 - Kustomisasi pipeline dibatasi pada tahap tengah; status anchor (Applied, Hired, Rejected, Withdrawn) tetap seragam di seluruh sistem agar analytics tetap dapat dibandingkan lintas lowongan/perusahaan.
 - Tracking sumber kandidat (FR-6.8) bersifat opsional dan self-reported oleh kandidat — bukan tracking teknis (mis. UTM parameter), sehingga akurasinya bergantung pada kejujuran pengisian.
+- **Halaman harga bersifat informasional** untuk kebutuhan pemasaran (menampilkan paket Starter/Growth/Enterprise). Tidak ada mekanisme enforcement teknis (pembatasan jumlah lowongan/anggota tim berdasarkan paket, integrasi payment gateway) pada versi ini — seluruh fitur yang dijabarkan di PRD tersedia penuh untuk workspace manapun, terlepas dari paket yang "dipilih" di halaman harga.
 
 ---
 

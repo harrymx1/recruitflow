@@ -117,7 +117,10 @@ Sistem memiliki tiga kelompok pengguna dengan flow terpisah: **Kandidat (publik)
 ### 2.1 Area Publik (tanpa login / akses umum)
 
 ```
-/                              → Job Board (home)
+/                              → Landing Page Utama (netral, dua sisi)
+/cari-lowongan                 → Job Board (sisi kandidat)
+/untuk-perusahaan              → Landing Page Perusahaan
+/harga                         → Halaman Harga
 /jobs/:jobId                   → Detail Lowongan
 /companies/:companySlug        → Profil Perusahaan Publik
 /candidate/register             → Registrasi Kandidat
@@ -231,7 +234,12 @@ Sistem memiliki tiga kelompok pengguna dengan flow terpisah: **Kandidat (publik)
 
 ### 5.1 Area Publik
 
-**[P-01] Job Board (Home)** — `/`
+**[P-00] Landing Page Utama** — `/`
+- Tujuan: pintu masuk netral platform, merepresentasikan **kedua sisi pengguna secara setara** (kandidat & perusahaan) — lihat PDD §2. Tidak boleh terkesan condong ke salah satu sisi.
+- Komponen: hero netral (headline tentang menghubungkan pencari kerja & perusahaan, bukan headline yang cuma bicara ke satu sisi), **dua kartu/panel bercabang setara** ("Saya Mencari Kerja" → Job Board, "Saya Ingin Merekrut" → Landing Page Perusahaan) ditampilkan berdampingan dengan bobot visual sama, ringkasan angka/trust signal (opsional), footer.
+- Aksi utama: klik salah satu dari dua CTA utama untuk masuk ke alur masing-masing; tidak ada CTA tunggal yang didahulukan secara visual.
+
+**[P-01] Job Board (Sisi Kandidat)** — `/cari-lowongan`
 - Tujuan: titik masuk utama pencarian kerja lintas perusahaan.
 - Komponen: search bar, panel filter (sidebar/collapsible di mobile), panel sort berprioritas, grid/list kartu lowongan (logo perusahaan, judul, lokasi, jenis kerja, jumlah pelamar/kuota), pagination/infinite scroll.
 - Aksi utama: cari, filter, atur prioritas sort, klik kartu → Job Detail, bookmark langsung dari kartu (jika sudah login).
@@ -259,6 +267,16 @@ Sistem memiliki tiga kelompok pengguna dengan flow terpisah: **Kandidat (publik)
 **[P-06] Konfirmasi Lamaran Terkirim**
 - Tujuan: kepastian bahwa lamaran berhasil masuk.
 - Komponen: pesan sukses, ringkasan lowongan yang dilamar, tombol ke Dashboard Kandidat / kembali ke Job Board.
+
+**[P-07] Landing Page Perusahaan** — `/untuk-perusahaan`
+- Tujuan: halaman "jualan" untuk meyakinkan tim HR/perusahaan menggunakan RecruitFlow, dituju dari navbar/footer "Untuk Perusahaan" — berbeda dari Job Board (P-01) yang fokus ke kandidat.
+- Komponen: hero (headline + CTA ganda: "Daftar Gratis" & "Lihat Harga"), bagian fitur unggulan (Job Board lintas kandidat, Pipeline visual, Analytics, dll — ringkasan dari modul PRD), bagian "Cara Kerja" (3 langkah singkat), testimoni (placeholder), CTA penutup.
+- Aksi utama: klik "Daftar Gratis" → Register Perusahaan (H-01); klik "Lihat Harga" → Pricing (P-08).
+
+**[P-08] Halaman Harga** — `/harga`
+- Tujuan: menampilkan paket harga secara informasional (lihat Batasan PRD — tidak ada enforcement teknis).
+- Komponen: 3 kartu paket (Starter/Growth/Enterprise) dengan daftar fitur & harga, toggle bulanan/tahunan (opsional), FAQ singkat, CTA akhir.
+- Aksi utama: klik paket → Register Perusahaan (H-01); paket Enterprise → mailto/kontak (bukan form otomatis).
 
 ### 5.2 Area Kandidat
 

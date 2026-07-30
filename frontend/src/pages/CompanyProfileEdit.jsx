@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/axios';
 import { useAuth } from '../contexts/AuthContext';
+import HRLayout from '../components/HRLayout';
 
 const CompanyProfileEdit = () => {
   const { user } = useAuth();
@@ -143,46 +144,14 @@ const CompanyProfileEdit = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* SIDEBAR */}
-      <aside className="w-60 bg-ink-700 flex-shrink-0 flex flex-col">
-        <div className="h-16 flex items-center px-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <svg width="24" height="17" viewBox="0 0 28 20" fill="none"><line x1="4" y1="16" x2="14" y2="8" stroke="#7EC1C7" strokeWidth="2"/><line x1="14" y1="8" x2="24" y2="4" stroke="#E8A23D" strokeWidth="2"/><circle cx="4" cy="16" r="3.5" fill="#7EC1C7"/><circle cx="14" cy="8" r="3.5" fill="#7EC1C7"/><circle cx="24" cy="4" r="4" fill="#E8A23D"/></svg>
-            <span className="italic font-medium text-[18px] text-white">RecruitFlow</span>
-          </Link>
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <Link to="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] text-white bg-[rgba(31,111,120,0.2)] border-amber-500">
-            Profil Perusahaan
-          </Link>
-          <Link to="/dashboard/jobs" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Lowongan
-          </Link>
-          <Link to="/dashboard/team" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Tim <span className="text-body-sm text-ink-300 font-mono ml-auto">Admin</span>
-          </Link>
-        </nav>
-      </aside>
-
-      {/* CONTENT */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-canvas-border flex items-center justify-between px-8 flex-shrink-0">
-          <div><p className="text-body-sm text-ink-300">Workspace</p><p className="text-body-md font-semibold text-ink-700">{user?.companyName || 'Perusahaan Anda'}</p></div>
-          <button className="w-9 h-9 rounded-full bg-ink-700 text-white flex items-center justify-center font-semibold text-body-sm">
-            {getInitials(user?.name)}
-          </button>
-        </header>
-
-        <main className="flex-1 p-8 overflow-y-auto">
+    <HRLayout>
+      <div className="max-w-3xl">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h1 className="text-heading-lg font-semibold text-ink-700">Profil Perusahaan</h1>
             <Link to={`/company/${formData.name.toLowerCase().replace(/ /g, '-')}`} target="_blank" className="text-body-sm border border-teal-500 text-teal-700 hover:bg-teal-100 font-medium px-4 py-2 rounded-md">
               Lihat Preview Publik ↗
             </Link>
           </div>
-
-          <div className="max-w-2xl">
             {error && <div className="mb-4 bg-coral-100 text-coral-700 p-3 rounded-md text-body-sm font-medium">{error}</div>}
             {success && <div className="mb-4 bg-moss-100 text-moss-700 p-3 rounded-md text-body-sm font-medium">{success}</div>}
 
@@ -300,10 +269,8 @@ const CompanyProfileEdit = () => {
                 </div>
               </form>
             )}
-          </div>
-        </main>
       </div>
-    </div>
+    </HRLayout>
   );
 };
 

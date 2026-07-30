@@ -56,12 +56,13 @@ const CompanyProfile = () => {
             <span className="italic font-medium text-[20px] text-ink-700">RecruitFlow</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-body-md text-ink-500">
-            <Link to="/jobs" className="hover:text-ink-700">Cari Lowongan</Link>
-            <span className="text-teal-700 font-medium">Perusahaan</span>
+            <Link to="/cari-lowongan" className="hover:text-ink-700">Cari Lowongan</Link>
+            <Link to="/untuk-perusahaan" className="hover:text-ink-700">Untuk Perusahaan</Link>
+            <Link to="/harga" className="hover:text-ink-700">Harga</Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Link to="/candidate/auth" className="hidden sm:inline text-body-md text-ink-700 hover:text-teal-700 px-3 py-2">Masuk</Link>
-            <Link to="/candidate/auth" className="bg-amber-500 hover:bg-amber-600 text-ink-700 text-body-md font-semibold px-4 py-2 rounded-md transition-colors">Daftar</Link>
+            <Link to="/company/login" className="hidden sm:inline text-body-md text-ink-700 hover:text-teal-700 px-3 py-2">Masuk</Link>
+            <Link to="/company/register" className="bg-amber-500 hover:bg-amber-600 text-ink-700 text-body-md font-semibold px-4 py-2 rounded-md transition-colors">Daftar Gratis</Link>
           </div>
         </div>
       </header>

@@ -38,7 +38,10 @@
 
 | File | Kode Screen | Route yang Dituju (lihat System Design §2.2–2.3) |
 |---|---|---|
-| `job-board.html` | P-01 | `/` |
+| `landing.html` | P-00 | `/` (home netral, dua sisi) |
+| `company-landing.html` | P-07 | `/untuk-perusahaan` |
+| `pricing.html` | P-08 | `/harga` |
+| `job-board.html` | P-01 | `/cari-lowongan` *(dipindah dari `/` — lihat catatan revisi di bawah)* |
 | `job-detail.html` | P-02 | `/jobs/:jobId` |
 | `company-profile.html` | P-03 | `/companies/:companySlug` |
 | `candidate-auth.html` | P-04 | `/candidate/register`, `/candidate/login` |
@@ -104,7 +107,8 @@ Ringkasan keputusan penting yang muncul sepanjang proses — supaya konsisten di
 - **Dokumen kandidat**: koleksi CV berlabel + opsi upload khusus per lamaran; setiap lamaran menyimpan **snapshot** dokumen yang dipakai (tidak berubah meski dokumen di profil diganti kemudian).
 - **Desain**: satu keluarga font (**Poppins**), italic eksklusif untuk logo/wordmark saja. Motif **Stage Rail** dipakai konsisten (fungsional di tracking/pipeline, ambient di hero publik). Footer gelap (`ink-700`) hanya di area publik non-auth.
 - **Auto-close lowongan**: otomatis saat kuota penuh atau deadline lewat; HR bisa reopen manual.
+- **Landing page**: `/` adalah halaman netral yang merepresentasikan **kandidat & perusahaan secara setara** (P-00), baru bercabang ke Job Board (`/cari-lowongan`) atau Landing Page Perusahaan (`/untuk-perusahaan`). Jangan perlakukan salah satu sisi sebagai "default/utama" — RecruitFlow adalah platform dua sisi yang saling bergantung.
 
 ---
 
-*Selesai — dokumen ini menjadi titik referensi tunggal saat memulai development di AntiGravity AI IDE.*
+*Selesai — dokumen ini menjadi titik referensi tunggal saat memulai fase development.*

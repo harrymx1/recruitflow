@@ -4,6 +4,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import api from '../utils/axios';
 import { useAuth } from '../contexts/AuthContext';
+import HRLayout from '../components/HRLayout';
 
 const JobForm = () => {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ const JobForm = () => {
     salary_max: '',
     salary_currency: 'IDR',
     deadline: '',
-    work_arrangement: 'on-site',
+    positions_available: 1,
     is_paid: true,
     duration_min: '',
     duration_max: '',
@@ -68,7 +69,7 @@ const JobForm = () => {
         title: job.title || '',
         department: job.department || '',
         employment_type: job.employment_type || 'Full-time',
-        work_arrangement: job.work_arrangement || (job.is_remote ? 'remote' : 'on-site'),
+        work_arrangement: job.work_arrangement || 'on-site',
         experience_level: job.experience_level || 'Entry-level',
         description: job.description || '',
         requirements: job.requirements || '',
@@ -77,7 +78,7 @@ const JobForm = () => {
         salary_max: job.salary_max || '',
         salary_currency: job.salary_currency || 'IDR',
         deadline: job.deadline ? job.deadline.split('T')[0] : '',
-        work_arrangement: job.work_arrangement || 'on-site',
+        positions_available: job.positions_available || 1,
         is_paid: job.is_paid !== undefined ? job.is_paid : true,
         duration_min: job.duration_min || '',
         duration_max: job.duration_max || '',
@@ -139,48 +140,13 @@ const JobForm = () => {
     }
   };
 
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-ink-300">Memuat...</div>;
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* SIDEBAR */}
-      <aside className="w-60 bg-ink-700 flex-shrink-0 flex flex-col">
-        <div className="h-16 flex items-center px-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <svg width="24" height="17" viewBox="0 0 28 20" fill="none"><line x1="4" y1="16" x2="14" y2="8" stroke="#7EC1C7" strokeWidth="2"/><line x1="14" y1="8" x2="24" y2="4" stroke="#E8A23D" strokeWidth="2"/><circle cx="4" cy="16" r="3.5" fill="#7EC1C7"/><circle cx="14" cy="8" r="3.5" fill="#7EC1C7"/><circle cx="24" cy="4" r="4" fill="#E8A23D"/></svg>
-            <span className="italic font-medium text-[18px] text-white">RecruitFlow</span>
-          </Link>
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <Link to="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Profil Perusahaan
-          </Link>
-          <Link to="/dashboard/jobs" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] text-white bg-[rgba(31,111,120,0.2)] border-amber-500">
-            Lowongan
-          </Link>
-          <Link to="/dashboard/team" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Tim <span className="text-body-sm text-ink-300 font-mono ml-auto">Admin</span>
-          </Link>
-        </nav>
-      </aside>
-
-      {/* CONTENT */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-canvas-border flex items-center justify-between px-8 flex-shrink-0">
-          <div><p className="text-body-sm text-ink-300">Workspace</p><p className="text-body-md font-semibold text-ink-700">{user?.companyName || 'Perusahaan Anda'}</p></div>
-          <button className="w-9 h-9 rounded-full bg-ink-700 text-white flex items-center justify-center font-semibold text-body-sm">
-            {getInitials(user?.name)}
-          </button>
-        </header>
-
-        <main className="flex-1 p-8 overflow-y-auto">
+    <HRLayout>
+      <form onSubmit={(e) => e.preventDefault()}>
           <Link to="/dashboard/jobs" className="inline-flex items-center gap-1.5 text-body-sm text-ink-500 hover:text-teal-700 mb-4">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg> Kembali ke Daftar Lowongan
           </Link>
@@ -189,7 +155,6 @@ const JobForm = () => {
           <div className="max-w-3xl">
             {error && <div className="mb-4 bg-coral-100 text-coral-700 p-3 rounded-md text-body-sm font-medium">{error}</div>}
             
-            {/* Info Dasar */}
             <div className="bg-white border border-canvas-border rounded-lg p-6 mb-6">
               <h2 className="text-heading-md font-semibold text-ink-700 mb-4">Info Dasar</h2>
               <div className="space-y-4">
@@ -228,6 +193,10 @@ const JobForm = () => {
                       <option value="Senior">Senior</option>
                       <option value="Manager">Manajerial</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="field-label">Kuota Pekerjaan (Kandidat)</label>
+                    <input type="number" min="1" className="input-field" name="positions_available" value={formData.positions_available} onChange={handleChange}/>
                   </div>
                   <div>
                     <label className="field-label">Batas Akhir Lamar (opsional)</label>
@@ -273,7 +242,6 @@ const JobForm = () => {
               </div>
             </div>
 
-            {/* Deskripsi */}
             <div className="bg-white border border-canvas-border rounded-lg p-6 mb-6">
               <h2 className="text-heading-md font-semibold text-ink-700 mb-4">Deskripsi Pekerjaan</h2>
               <div className="mb-5">
@@ -312,7 +280,6 @@ const JobForm = () => {
               </div>
             </div>
 
-            {/* Custom Questions Builder */}
             <div className="bg-white border border-canvas-border rounded-lg p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-heading-md font-semibold text-ink-700">Pertanyaan Seleksi Tambahan</h2>
@@ -390,7 +357,6 @@ const JobForm = () => {
               {customQuestions.length === 0 && <p className="text-body-sm text-ink-300 italic">Belum ada pertanyaan tambahan.</p>}
             </div>
 
-            {/* Pipeline Builder */}
             <div className="bg-white border border-canvas-border rounded-lg p-6 mb-6">
               <h2 className="text-heading-md font-semibold text-ink-700 mb-1">Konfigurasi Pipeline</h2>
               <p className="text-body-sm text-ink-300 mb-5">Sesuaikan tahap seleksi tengah untuk lowongan ini. Tahap dengan ikon gembok bersifat tetap.</p>
@@ -422,7 +388,6 @@ const JobForm = () => {
                 
                 <button type="button" onClick={() => {
                   const newS = [...pipelineStages];
-                  // Insert before hired
                   const hiredIdx = newS.findIndex(s => s.name === 'hired');
                   newS.splice(hiredIdx, 0, { name: 'New Stage', type: 'custom' });
                   setPipelineStages(newS);
@@ -431,7 +396,6 @@ const JobForm = () => {
               <p className="text-body-sm text-ink-300 mt-4">Tahap <strong>Rejected</strong> & <strong>Withdrawn</strong> selalu tersedia otomatis di setiap lowongan.</p>
             </div>
 
-            {/* Aksi */}
             <div className="flex items-center justify-end gap-3 pb-8">
               <button onClick={() => handleSave(false)} disabled={saving} className="text-ink-700 border border-canvas-border hover:bg-gray-50 font-medium text-body-md px-5 py-2.5 rounded-md disabled:opacity-50">
                 Simpan sebagai Draft
@@ -442,9 +406,8 @@ const JobForm = () => {
             </div>
 
           </div>
-        </main>
-      </div>
-    </div>
+      </form>
+    </HRLayout>
   );
 };
 

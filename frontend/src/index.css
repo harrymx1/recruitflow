@@ -43,4 +43,21 @@
   .card {
     @apply rounded-lg border border-gray-200 shadow-xs bg-white;
   }
+  
+  /* Landing Page Styles */
+  .hero-spotlight {
+    background:
+      radial-gradient(700px circle at 85% 10%, rgba(232,162,61,0.14), transparent 60%),
+      radial-gradient(500px circle at 10% 70%, rgba(31,111,120,0.10), transparent 60%);
+  }
+  .hero-spotlight-neutral {
+    background:
+      radial-gradient(600px circle at 50% 0%, rgba(232,162,61,0.10), transparent 60%);
+  }
+  .feature-card, .path-card { transition: transform 150ms, box-shadow 150ms; }
+  .feature-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(22,35,63,0.10); }
+  .path-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(22,35,63,0.16); }
+  
+  .plan-card.featured { border-color:#E8A23D; box-shadow:0 12px 32px rgba(22,35,63,0.16); transform: scale(1.03); }
+  .toggle-btn.active { background:white; color:#16233F; box-shadow:0 1px 2px rgba(22,35,63,0.08); }
 }

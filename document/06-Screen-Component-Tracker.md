@@ -109,6 +109,18 @@ Bukan urutan acak — mengikuti logika "screen yang membangun pola dasar dikerja
 - Setiap kali satu screen selesai dibuat & disetujui, tandai ✅ di sini.
 - Kalau saat mengerjakan satu screen ternyata butuh komponen baru yang belum ada di Design.md (seperti kasus Calendar), berhenti dulu → tambahkan spesifikasinya ke Design.md → baru lanjut build, supaya semua komponen tetap terdokumentasi di satu tempat sebagai sumber kebenaran.
 
+## 5. Batch Tambahan (Pasca-Review)
+
+*Ditemukan saat review pasca-development Sprint 1 — belum tercakup di 8 batch awal.*
+
+| Status | Kode | Screen | Komponen Dipakai |
+|---|---|---|---|
+| ✅ | P-00 | Landing Page Utama (netral, dua sisi) | 7.1, §6 Stage Rail (ambient, dual-purpose), 7.19 Footer — **home sesungguhnya (`/`), menggantikan Job Board sebagai root** |
+| ✅ | P-07 | Landing Page Perusahaan | 7.1, 7.3, 7.19 Footer, 7.20 Aceternity (hero spotlight) |
+| ✅ | P-08 | Halaman Harga | 7.1, 7.3 (kartu paket), 7.19 Footer |
+
+**Catatan penting:** penambahan P-00 mengubah routing — Job Board (P-01) tidak lagi di `/`, melainkan pindah ke `/cari-lowongan` (lihat UI/UX Spec §2.1 & §5.1 yang sudah diperbarui). Ini koreksi atas kesalahan desain awal yang memperlakukan sisi perusahaan sebagai "utama" dan kandidat sebagai "default/tanpa landing page sendiri" — lihat juga revisi PDD §2 (dua sisi pengguna setara, bukan primary/secondary).
+
 ---
 
 *Dokumen ini akan diperbarui seiring progres pembuatan mockup.*

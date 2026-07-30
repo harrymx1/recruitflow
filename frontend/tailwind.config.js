@@ -58,11 +58,16 @@ export default {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       fontSize: {
-        'display-lg': ['34px', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
-        'heading-lg': ['24px', { lineHeight: '1.25', letterSpacing: '-0.01em' }],
+        'display-xl': ['48px', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-lg': ['34px', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+        'heading-lg': ['26px', { lineHeight: '1.25' }],
+        'heading-md': ['19px', { lineHeight: '1.3' }],
         'body-lg': ['16px', { lineHeight: '1.65' }],
         'body-md': ['14px', { lineHeight: '1.55' }],
-        'body-sm': ['13px', { lineHeight: '1.45', letterSpacing: '0.01em' }],
+        'body-sm': ['13px', { lineHeight: '1.45' }],
+        'h1': ['36px', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'h2': ['30px', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
+        'h3': ['24px', { lineHeight: '1.4' }],
       },
       borderRadius: {
         'sm': '6px',
@@ -75,6 +80,9 @@ export default {
         'sm': '0 2px 6px rgba(22,35,63,0.06)',
         'md': '0 6px 16px rgba(22,35,63,0.10)',
         'lg': '0 12px 32px rgba(22,35,63,0.16)',
+      },
+      maxWidth: {
+        'container': '1200px',
       },
       keyframes: {
         'pulse-node': { 

@@ -14,9 +14,14 @@ class CompaniesController {
   async toggleMemberStatus(req, res, next) {
     try {
       const companyId = req.user.companyId;
+      const adminId = req.user.id;
       const { memberId } = req.params;
       const { isActive } = req.body;
       
+      if (adminId === memberId && isActive === false) {
+        return res.status(403).json({ success: false, message: 'Admin tidak dapat menonaktifkan dirinya sendiri' });
+      }
+
       const result = await companiesService.toggleMemberStatus(companyId, memberId, isActive);
       res.status(200).json({ success: true, data: result });
     } catch (err) {

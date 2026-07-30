@@ -28,6 +28,15 @@ class JobsService {
         err.statusCode = 400;
         throw err;
       }
+      if (company.subscription_tier === 'starter') {
+        const activeJobs = await jobRepository.getJobsByCompanyId(companyId);
+        const publishedCount = activeJobs.filter(j => j.is_published && j.status !== 'closed').length;
+        if (publishedCount >= 1) {
+          const err = new Error('Paket Starter hanya mengizinkan 1 lowongan aktif. Silakan upgrade ke paket Growth.');
+          err.statusCode = 403;
+          throw err;
+        }
+      }
     }
 
     jobData.company_id = companyId;
@@ -40,7 +49,7 @@ class JobsService {
       'experience_level', 'description', 'requirements', 'responsibilities', 
       'is_paid', 'salary_min', 'salary_max', 'salary_currency', 'work_arrangement', 
       'duration_min', 'duration_max', 'duration_unit',
-      'status', 'is_published', 'deadline'
+      'status', 'is_published', 'deadline', 'positions_available'
     ];
     
     const dataToUpdate = {};
@@ -57,6 +66,20 @@ class JobsService {
         err.statusCode = 400;
         throw err;
       }
+      
+      const currentJob = await jobRepository.getJobById(companyId, jobId);
+      if (!currentJob.is_published || currentJob.status === 'closed') {
+        if (company.subscription_tier === 'starter') {
+          const activeJobs = await jobRepository.getJobsByCompanyId(companyId);
+          const publishedCount = activeJobs.filter(j => j.is_published && j.status !== 'closed' && j.id !== jobId).length;
+          if (publishedCount >= 1) {
+            const err = new Error('Paket Starter hanya mengizinkan 1 lowongan aktif. Silakan upgrade ke paket Growth.');
+            err.statusCode = 403;
+            throw err;
+          }
+        }
+      }
+
       dataToUpdate.published_at = new Date();
     }
 

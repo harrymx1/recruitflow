@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../utils/axios';
 import { useAuth } from '../contexts/AuthContext';
+import HRLayout from '../components/HRLayout';
+import Modal from '../components/ui/Modal';
 
 const TeamManagement = () => {
   const { user } = useAuth();
@@ -57,42 +58,8 @@ const TeamManagement = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* SIDEBAR */}
-      <aside className="w-60 bg-ink-700 flex-shrink-0 flex flex-col">
-        <div className="h-16 flex items-center px-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <svg width="24" height="17" viewBox="0 0 28 20" fill="none"><line x1="4" y1="16" x2="14" y2="8" stroke="#7EC1C7" strokeWidth="2"/><line x1="14" y1="8" x2="24" y2="4" stroke="#E8A23D" strokeWidth="2"/><circle cx="4" cy="16" r="3.5" fill="#7EC1C7"/><circle cx="14" cy="8" r="3.5" fill="#7EC1C7"/><circle cx="24" cy="4" r="4" fill="#E8A23D"/></svg>
-            <span className="italic font-medium text-[18px] text-white">RecruitFlow</span>
-          </Link>
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <Link to="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Profil Perusahaan
-          </Link>
-          <Link to="/dashboard/jobs" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] border-transparent text-gray-300 hover:text-white">
-            Lowongan
-          </Link>
-          <Link to="/dashboard/team" className="flex items-center gap-3 px-3 py-2.5 rounded-md text-body-md border-l-[3px] text-white bg-[rgba(31,111,120,0.2)] border-amber-500">
-            Tim <span className="text-body-sm text-ink-300 font-mono ml-auto">Admin</span>
-          </Link>
-        </nav>
-      </aside>
-
-      {/* CONTENT */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-          <div><p className="text-body-sm text-ink-300">Workspace</p><p className="text-body-md font-semibold text-ink-700">{user?.companyName || 'Perusahaan Anda'}</p></div>
-          <div className="flex items-center gap-4">
-            <span className="text-body-sm font-medium">{user?.name}</span>
-            <button className="w-9 h-9 rounded-full bg-ink-700 text-white flex items-center justify-center font-semibold text-body-sm">
-              {user ? getInitials(user.name || 'U') : 'U'}
-            </button>
-          </div>
-        </header>
-
-        <main className="flex-1 p-8 overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
+    <HRLayout>
+      <div className="flex items-center justify-between mb-6">
             <h1 className="text-heading-lg font-semibold text-ink-700">Manajemen Tim</h1>
             {user?.role === 'admin' && (
               <button onClick={() => setIsModalOpen(true)} className="btn-primary">
@@ -151,45 +118,43 @@ const TeamManagement = () => {
               </tbody>
             </table>
           </div>
-        </main>
-      </div>
 
       {/* MODAL UNDANG ANGGOTA */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-ink-700/60 z-40 flex items-center justify-center px-6">
-          <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6">
-            <h3 className="text-body-lg font-semibold text-ink-700 mb-4">Undang Anggota Baru</h3>
-            <form onSubmit={handleInviteSubmit} className="space-y-4">
-              <div>
-                <label className="field-label">Nama</label>
-                <input required type="text" value={inviteForm.name} onChange={e => setInviteForm({...inviteForm, name: e.target.value})} className="input-field" placeholder="Nama Anggota"/>
-              </div>
-              <div>
-                <label className="field-label">Email</label>
-                <input required type="email" value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} className="input-field" placeholder="nama@perusahaan.com"/>
-              </div>
-              <div>
-                <label className="field-label">Password Sementara</label>
-                <input required type="password" value={inviteForm.password} onChange={e => setInviteForm({...inviteForm, password: e.target.value})} className="input-field" minLength={8} placeholder="Minimal 8 karakter"/>
-              </div>
-              <div>
-                <label className="field-label">Role</label>
-                <select value={inviteForm.role} onChange={e => setInviteForm({...inviteForm, role: e.target.value})} className="input-field">
-                  <option value="hr">HR/Recruiter</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 text-ink-700 border border-gray-200 hover:bg-gray-50 font-medium py-2.5 rounded-md">Batal</button>
-                <button type="submit" disabled={inviteLoading} className="flex-1 bg-amber-500 hover:bg-amber-600 text-ink-700 font-semibold py-2.5 rounded-md disabled:opacity-50">
-                  {inviteLoading ? 'Mengirim...' : 'Kirim Undangan'}
-                </button>
-              </div>
-            </form>
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        title="Undang Anggota Baru"
+        maxWidth="max-w-sm"
+      >
+        <form onSubmit={handleInviteSubmit} className="space-y-4">
+          <div>
+            <label className="field-label">Nama</label>
+            <input required type="text" value={inviteForm.name} onChange={e => setInviteForm({...inviteForm, name: e.target.value})} className="input-field" placeholder="Nama Anggota"/>
           </div>
-        </div>
-      )}
-    </div>
+          <div>
+            <label className="field-label">Email</label>
+            <input required type="email" value={inviteForm.email} onChange={e => setInviteForm({...inviteForm, email: e.target.value})} className="input-field" placeholder="nama@perusahaan.com"/>
+          </div>
+          <div>
+            <label className="field-label">Password Sementara</label>
+            <input required type="password" value={inviteForm.password} onChange={e => setInviteForm({...inviteForm, password: e.target.value})} className="input-field" minLength={8} placeholder="Minimal 8 karakter"/>
+          </div>
+          <div>
+            <label className="field-label">Role</label>
+            <select value={inviteForm.role} onChange={e => setInviteForm({...inviteForm, role: e.target.value})} className="input-field">
+              <option value="hr">HR/Recruiter</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 text-ink-700 border border-gray-200 hover:bg-gray-50 font-medium py-2.5 rounded-md">Batal</button>
+            <button type="submit" disabled={inviteLoading} className="flex-1 bg-amber-500 hover:bg-amber-600 text-ink-700 font-semibold py-2.5 rounded-md disabled:opacity-50">
+              {inviteLoading ? 'Mengirim...' : 'Kirim Undangan'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </HRLayout>
   );
 };
 

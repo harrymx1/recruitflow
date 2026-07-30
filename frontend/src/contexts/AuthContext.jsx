@@ -9,13 +9,18 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Try to load user from local storage initially
     const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('accessToken');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+    if (storedToken) {
+      setToken(storedToken);
     }
     setLoading(false);
   }, []);
@@ -25,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     const { accessToken, member } = res.data.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('user', JSON.stringify(member));
+    setToken(accessToken);
     setUser(member);
     return member;
   };
@@ -39,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     const { accessToken, candidate } = res.data.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('user', JSON.stringify(candidate));
+    setToken(accessToken);
     setUser(candidate);
     return candidate;
   };
@@ -61,17 +68,26 @@ export const AuthProvider = ({ children }) => {
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
+      setToken(null);
       setUser(null);
     }
   };
 
+  const updateUser = (newUserData) => {
+    const updatedUser = { ...user, ...newUserData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const value = {
     user,
+    token,
     companyLogin,
     companyRegister,
     candidateLogin,
     candidateRegister,
-    logout
+    logout,
+    updateUser
   };
 
   return (

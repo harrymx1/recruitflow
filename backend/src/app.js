@@ -38,12 +38,28 @@ app.use('/api/auth/candidate', require('./routes/auth.candidate.routes'));
 // Dashboard (HR)
 app.use('/api/dashboard/company', require('./routes/companies.routes'));
 app.use('/api/dashboard/jobs', require('./routes/jobs.routes'));
+app.use('/api/dashboard', require('./routes/pipeline.routes'));
+app.use('/api/dashboard/candidates', require('./routes/hr.candidates.routes'));
+app.use('/api/dashboard/applications', require('./routes/activityLogs.routes'));
+app.use('/api/dashboard/analytics', require('./routes/analytics.routes'));
+app.use('/api/dashboard/interviews', require('./routes/hr.interviews.routes'));
+app.use('/api/dashboard/tags', require('./routes/hr.tags.routes'));
+app.use('/api/dashboard/email-templates', require('./routes/hr.emailTemplates.routes'));
+
+// Candidate Portal
+app.use('/api/candidate/jobs', require('./routes/candidate.jobs.routes'));
+app.use('/api/candidate/profile', require('./routes/candidate.profile.routes'));
+app.use('/api/candidate/applications', require('./routes/candidate.application.routes'));
 
 // Uploads
 app.use('/api/uploads', require('./routes/upload.routes'));
 
 // Public
 app.use('/api/public/companies', require('./routes/public.companies.routes'));
+app.use('/api/public/jobs', require('./routes/public.jobs.routes'));
+
+// Subscriptions
+app.use('/api/subscriptions', require('./routes/subscriptions.routes'));
 
 // Health Check
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));

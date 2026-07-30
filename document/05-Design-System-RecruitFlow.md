@@ -15,7 +15,7 @@ RecruitFlow melayani dua audiens dengan kebutuhan visual berbeda dalam satu prod
 
 **Elemen penyatu (signature)**: seluruh alur rekrutmen pada dasarnya adalah sebuah **rangkaian tahap** (Applied → Screening → Interview → Offer → Hired). Ini dijadikan **motif visual utama**: *"Stage Rail"* — rangkaian titik/node terhubung garis, dengan satu node aktif yang menyala. Dipakai secara **fungsional** (timeline status, header kanban) sekaligus jadi elemen ambient pembeda — karena elemen ini benar-benar merepresentasikan inti produk, bukan dekorasi kosong.
 
-Palet & tipografi sengaja **menghindari** kombinasi "krem + serif kontras tinggi + aksen terracotta" dan "gelap pekat + neon tunggal" yang jadi default umum desain AI — RecruitFlow memakai kanvas dingin netral dengan aksen amber-emas yang lebih jenuh & spesifik, dipadu teal pelabuhan sebagai aksen kedua, serta satu keluarga tipografi (Poppins) yang hierarkinya dibangun lewat berat huruf & italic yang disiplin, bukan lewat pergantian font.
+Palet & tipografi sengaja **menghindari** kombinasi "krem + serif kontras tinggi + aksen terracotta" dan "gelap pekat + neon tunggal" yang jadi default umum template desain — RecruitFlow memakai kanvas dingin netral dengan aksen amber-emas yang lebih jenuh & spesifik, dipadu teal pelabuhan sebagai aksen kedua, serta satu keluarga tipografi (Poppins) yang hierarkinya dibangun lewat berat huruf & italic yang disiplin, bukan lewat pergantian font.
 
 ---
 

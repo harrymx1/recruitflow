@@ -52,7 +52,7 @@ class AuthCandidateService {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
     await candidateRepository.storeRefreshToken(candidate.id, tokenHash, expiresAt);
     
-    return { accessToken, refreshToken, candidate: { id: candidate.id, email: candidate.email } };
+    return { accessToken, refreshToken, candidate: { id: candidate.id, email: candidate.email, role: 'candidate' } };
   }
 
   async refresh(refreshToken) {

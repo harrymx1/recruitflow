@@ -19,17 +19,21 @@ RecruitFlow hadir sebagai platform terpusat yang menyatukan seluruh alur rekrutm
 
 ## 2. Target Pengguna
 
-### 2.1 Primary User — Tim HR / Recruiter (Internal)
+RecruitFlow adalah platform **dua sisi (two-sided platform)** — nilai produk ini hanya terwujud jika **kedua sisi** aktif digunakan secara bersamaan. Job board tanpa kandidat yang mencari kerja tidak ada gunanya bagi perusahaan; sebaliknya, sistem pelacakan lamaran tanpa perusahaan yang membuka lowongan tidak ada gunanya bagi kandidat. Karena itu, kedua kelompok pengguna berikut diperlakukan **setara**, bukan sebagai utama dan tambahan.
+
+### 2.1 Perusahaan / Tim HR (Internal)
 - Perusahaan kecil-menengah yang belum memiliki sistem ATS (Applicant Tracking System) formal, masih mengandalkan spreadsheet/email.
 - Berperan sebagai pengelola workspace perusahaan: membuka lowongan, mengelola kandidat, menjadwalkan interview, hingga membuat keputusan.
 - Terdiri dari dua peran di dalam workspace:
   - **Admin** — mengelola workspace, pengguna, dan seluruh data rekrutmen perusahaan.
   - **HR/Recruiter** — menjalankan operasional rekrutmen sehari-hari (posting lowongan, mengelola pipeline, menjadwalkan interview, dsb).
 
-### 2.2 Secondary User — Kandidat (Eksternal, Publik)
-- Pencari kerja yang melihat lowongan melalui halaman karier publik milik masing-masing perusahaan.
-- Melamar langsung melalui portal tanpa perlu proses onboarding yang rumit.
-- Dapat memantau status lamaran mereka secara real-time.
+### 2.2 Kandidat / Pencari Kerja (Eksternal, Publik)
+- Pencari kerja yang menemukan lowongan lewat job board lintas perusahaan maupun halaman karier masing-masing perusahaan.
+- Melamar langsung melalui portal tanpa perlu proses onboarding yang rumit, dan tanpa perlu kanal komunikasi tambahan (email/WA) untuk melengkapi lamaran.
+- Dapat memantau status lamaran mereka secara real-time, ke perusahaan manapun di platform, lewat satu akun.
+
+*Implikasi desain: halaman masuk (landing page) platform harus merepresentasikan **kedua** sisi ini secara setara, bukan memprioritaskan salah satu — lihat UI/UX Specification untuk detail alur masing-masing.*
 
 ---
 
@@ -77,12 +81,14 @@ RecruitFlow dirancang sebagai solusi **multi-tenant**, di mana setiap perusahaan
 - Template email (offer, reject, undangan interview)
 - Catatan (notes) internal per kandidat
 - Dashboard analitik dasar
+- Landing page & halaman harga (informasional, untuk kebutuhan pemasaran)
 
 **Di luar scope awal (dapat menjadi pengembangan lanjutan):**
 - Resume parsing otomatis
 - Integrasi kalender eksternal (Google Calendar, dsb.)
 - Sistem penggajian/payroll & onboarding karyawan penuh
 - Aplikasi mobile native
+- **Enforcement pembatasan fitur berdasarkan paket harga** (mis. batas jumlah lowongan aktif untuk paket gratis) beserta integrasi payment gateway — halaman harga pada versi ini murni informasional; seluruh fitur yang dijabarkan di PRD tetap tersedia penuh untuk workspace manapun.
 
 ---
 

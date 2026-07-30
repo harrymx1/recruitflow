@@ -24,7 +24,6 @@ const generateSignedUrl = async (req, res, next) => {
         signedUrl: data.signedUrl,
         path: data.path,
         token: data.token,
-        // The public URL can be constructed if the bucket is public
         publicUrl: `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucketName}/${data.path}`
       }
     });
@@ -33,6 +32,40 @@ const generateSignedUrl = async (req, res, next) => {
   }
 };
 
+const uploadDocument = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const file = req.file;
+    const fileName = `${Date.now()}-${file.originalname}`;
+    
+    // Upload directly to supabase
+    const { data, error } = await supabase
+      .storage
+      .from('documents')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ message: 'Gagal mengunggah dokumen', error: error.message });
+    }
+
+    const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/documents/${data.path}`;
+
+    res.json({
+      success: true,
+      url: publicUrl
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  generateSignedUrl
+  generateSignedUrl,
+  uploadDocument
 };
