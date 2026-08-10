@@ -14,7 +14,7 @@ class HRInterviewsController {
         }
       }
       
-      const interview = await hrInterviewsRepository.scheduleInterview(id, companyId, data);
+      const interview = await hrInterviewsRepository.scheduleInterview(id, companyId, req.user.id, data);
       res.status(201).json({ success: true, message: 'Wawancara berhasil dijadwalkan', data: interview });
     } catch (err) {
       if (err.message === 'Aplikasi tidak valid') {

@@ -25,6 +25,13 @@ class JobsController {
   async createJob(req, res, next) {
     try {
       const companyId = req.user.companyId;
+      const { title, positions_available } = req.body;
+      if (!title || typeof title !== 'string' || title.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Judul job tidak boleh kosong' });
+      }
+      if (positions_available !== undefined && positions_available <= 0) {
+        return res.status(400).json({ success: false, message: 'Kuota job invalid' });
+      }
       const job = await jobsService.createJob(companyId, req.body);
       res.status(201).json({ success: true, data: job });
     } catch (err) {

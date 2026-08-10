@@ -44,13 +44,34 @@ class PipelineService {
     
     let newStatus = 'active';
     if (targetStage) {
-      if (targetStage.anchor_type === 'hired') newStatus = 'hired';
-      if (targetStage.anchor_type === 'rejected') newStatus = 'rejected';
-      if (targetStage.anchor_type === 'withdrawn') newStatus = 'withdrawn'; // Only if such stage exists and is accessible
+      if (targetStage.anchor_type === 'anchor') {
+        const stageName = targetStage.name.toLowerCase();
+        if (stageName === 'withdrawn') {
+           const err = new Error('HR tidak diizinkan mengubah status menjadi Withdrawn');
+           err.statusCode = 400;
+           throw err;
+        }
+        if (stageName === 'hired') newStatus = 'hired';
+        if (stageName === 'rejected') newStatus = 'rejected';
+      }
     } else {
        const err = new Error('Target stage is invalid');
        err.statusCode = 400;
        throw err;
+    }
+
+    // Handle Quota for Hired
+    if (newStatus === 'hired') {
+      try {
+        await pipelineRepository.incrementFilledCount(job.id);
+      } catch (err) {
+        if (err.message.includes('Overbooked')) {
+           const quotaErr = new Error('Kuota posisi ini sudah penuh.');
+           quotaErr.statusCode = 400;
+           throw quotaErr;
+        }
+        throw err;
+      }
     }
 
     // Update Application Stage
@@ -60,6 +81,13 @@ class PipelineService {
     if (newStatus !== application.status) {
       await pipelineRepository.updateApplicationStatus(applicationId, newStatus);
       updatedApp.status = newStatus;
+
+      if (newStatus === 'hired') {
+        const currentHiredCount = await pipelineRepository.getHiredCountByJobId(job.id);
+        if (job.positions_available && currentHiredCount >= job.positions_available) {
+          await jobRepository.updateJob(companyId, job.id, { status: 'closed' });
+        }
+      }
     }
 
     // Log Activity

@@ -73,8 +73,8 @@ const DashboardCandidates = () => {
 
       {/* Table */}
       <div className="bg-white border border-canvas-border rounded-lg overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-canvas-border">
+        <table className="w-full text-left block md:table">
+          <thead className="bg-gray-50 border-b border-canvas-border hidden md:table-header-group">
             <tr className="text-body-sm font-semibold text-ink-500">
               <th className="px-5 py-3">Kandidat</th>
               <th className="px-5 py-3">Lowongan</th>
@@ -84,14 +84,14 @@ const DashboardCandidates = () => {
               <th className="px-5 py-3"></th>
             </tr>
           </thead>
-          <tbody className="text-body-md divide-y divide-canvas-border">
+          <tbody className="text-body-md divide-y divide-canvas-border block md:table-row-group">
             {loading ? (
-              <tr><td colSpan="6" className="text-center py-10 text-ink-300">Memuat data...</td></tr>
+              <tr className="block md:table-row"><td colSpan="6" className="text-center py-10 text-ink-300 block md:table-cell">Memuat data...</td></tr>
             ) : candidates.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-10 text-ink-300">Belum ada kandidat yang ditemukan.</td></tr>
+              <tr className="block md:table-row"><td colSpan="6" className="text-center py-10 text-ink-300 block md:table-cell">Belum ada kandidat yang ditemukan.</td></tr>
             ) : candidates.map(c => (
-              <tr key={c.application_id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-5 py-4">
+              <tr key={c.application_id} className="hover:bg-gray-50 transition-colors block md:table-row p-4 md:p-0 relative">
+                <td className="px-0 md:px-5 py-2 md:py-4 block md:table-cell">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-body-sm flex-shrink-0">
                       {c.first_name?.charAt(0) || '?'}
@@ -107,8 +107,11 @@ const DashboardCandidates = () => {
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-4 text-ink-600">{c.job_title}</td>
-                <td className="px-5 py-4">
+                <td className="px-0 md:px-5 py-1 md:py-4 text-ink-600 block md:table-cell">
+                  <span className="md:hidden text-xs text-ink-400 font-semibold uppercase mr-2">Lowongan:</span>
+                  {c.job_title}
+                </td>
+                <td className="px-0 md:px-5 py-1 md:py-4 block md:table-cell">
                   <div className="flex flex-wrap gap-1">
                     {(c.tags || []).map(tag => (
                       <span
@@ -121,18 +124,19 @@ const DashboardCandidates = () => {
                     ))}
                   </div>
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-0 md:px-5 py-2 md:py-4 block md:table-cell absolute top-4 right-4 md:static">
                   <span className={`text-body-sm px-2.5 py-1 rounded-full font-medium ${statusColors[c.status] || 'bg-gray-100 text-ink-500'}`}>
                     {statusLabels[c.status] || c.status?.toUpperCase()}
                   </span>
                 </td>
-                <td className="px-5 py-4 text-ink-400 text-body-sm">
+                <td className="px-0 md:px-5 py-1 md:py-4 text-ink-400 text-body-sm block md:table-cell">
+                  <span className="md:hidden text-xs text-ink-400 font-semibold uppercase mr-2">Tanggal:</span>
                   {new Date(c.applied_at).toLocaleDateString('id-ID')}
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-0 md:px-5 py-3 md:py-4 text-left md:text-right block md:table-cell mt-2 md:mt-0">
                   <Link
                     to={`/dashboard/applications/${c.application_id}`}
-                    className="text-body-sm text-teal-700 hover:underline font-medium"
+                    className="inline-block w-full text-center md:w-auto md:text-right border border-teal-500 rounded px-3 py-2 md:border-0 md:p-0 text-body-sm text-teal-700 hover:bg-teal-50 md:hover:bg-transparent md:hover:underline font-medium"
                   >
                     Lihat Detail →
                   </Link>

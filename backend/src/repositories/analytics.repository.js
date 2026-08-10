@@ -49,11 +49,11 @@ class AnalyticsRepository {
     const activePipeline = await db.query(query, [companyId]);
 
     const statusQuery = `
-      SELECT status, COUNT(a.id) as count
+      SELECT a.status, COUNT(a.id) as count
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
       WHERE j.company_id = $1
-      GROUP BY status
+      GROUP BY a.status
     `;
     const statusRes = await db.query(statusQuery, [companyId]);
 
@@ -77,6 +77,27 @@ class AnalyticsRepository {
     `;
     const res = await db.query(query, [companyId]);
     return res.rows.map(r => ({ ...r, count: parseInt(r.count, 10) }));
+  }
+  async getTimeToHire(companyId) {
+    const query = `
+      SELECT 
+        j.id as job_id,
+        j.title as job_title,
+        ROUND(AVG(EXTRACT(EPOCH FROM (a.updated_at - a.applied_at))/86400)::numeric, 1) as avg_days_to_hire,
+        COUNT(a.id) as hires_count
+      FROM applications a
+      JOIN jobs j ON a.job_id = j.id
+      WHERE j.company_id = $1 AND a.status = 'hired'
+      GROUP BY j.id, j.title
+      ORDER BY avg_days_to_hire DESC;
+    `;
+    const res = await db.query(query, [companyId]);
+    return res.rows.map(r => ({
+      job_id: r.job_id,
+      job_title: r.job_title,
+      avg_days_to_hire: parseFloat(r.avg_days_to_hire) || 0,
+      hires_count: parseInt(r.hires_count, 10) || 0
+    }));
   }
 }
 

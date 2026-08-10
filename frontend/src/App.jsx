@@ -29,6 +29,7 @@ import JobApply from './pages/JobApply';
 import CandidateApplicationDetail from './pages/CandidateApplicationDetail';
 import DashboardCandidates from './pages/DashboardCandidates';
 import DashboardApplicationDetail from './pages/DashboardApplicationDetail';
+import DashboardAnalytics from './pages/DashboardAnalytics';
 import DashboardInterviews from './pages/DashboardInterviews';
 import DashboardTags from './pages/DashboardTags';
 import DashboardEmailTemplates from './pages/DashboardEmailTemplates';
@@ -133,6 +134,11 @@ const AppRoutes = () => {
       <Route path="/dashboard/applications/:id" element={
         <ProtectedCompanyRoute>
           <DashboardApplicationDetail />
+        </ProtectedCompanyRoute>
+      } />
+      <Route path="/dashboard/analytics" element={
+        <ProtectedCompanyRoute>
+          <DashboardAnalytics />
         </ProtectedCompanyRoute>
       } />
       <Route path="/dashboard/interviews" element={

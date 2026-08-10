@@ -62,6 +62,25 @@ class PipelineRepository {
     `;
     await db.query(query, [applicationId, actorType, actorId, actionType, description]);
   }
+  async getHiredCountByJobId(jobId) {
+    const query = `SELECT COUNT(*) FROM applications WHERE job_id = $1 AND status = 'hired'`;
+    const res = await db.query(query, [jobId]);
+    return parseInt(res.rows[0].count, 10);
+  }
+
+  async incrementFilledCount(jobId) {
+    const query = `
+      UPDATE jobs 
+      SET filled_count = filled_count + 1 
+      WHERE id = $1 AND (positions_available IS NULL OR filled_count < positions_available)
+      RETURNING *
+    `;
+    const res = await db.query(query, [jobId]);
+    if (res.rowCount === 0) {
+      throw new Error('Overbooked: Kuota pekerjaan sudah penuh');
+    }
+    return res.rows[0];
+  }
 }
 
 module.exports = new PipelineRepository();

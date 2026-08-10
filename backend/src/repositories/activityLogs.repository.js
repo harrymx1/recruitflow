@@ -30,8 +30,8 @@ class ActivityLogsRepository {
       SELECT 
         al.*,
         CASE 
-          WHEN al.actor_type = 'company_member' THEN (SELECT first_name || ' ' || last_name FROM company_members WHERE id = al.actor_id)
-          WHEN al.actor_type = 'candidate' THEN (SELECT first_name || ' ' || last_name FROM candidates WHERE id = al.actor_id)
+          WHEN al.actor_type = 'company_member' THEN (SELECT name FROM company_members WHERE id = al.actor_id)
+          WHEN al.actor_type = 'candidate' THEN (SELECT full_name FROM candidate_profiles WHERE candidate_id = al.actor_id)
           ELSE 'Sistem'
         END as actor_name
       FROM activity_logs al

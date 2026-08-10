@@ -6,7 +6,7 @@ class HRCandidatesRepository {
       SELECT 
         a.id as application_id, a.status, a.applied_at,
         j.id as job_id, j.title as job_title,
-        cp.full_name as first_name, '' as last_name, c.email, c.subscription_tier,
+        cp.full_name as first_name, '' as last_name, c.email,
         cp.headline, cp.phone,
         COALESCE(json_agg(json_build_object('id', t.id, 'name', t.name, 'color', t.color)) FILTER (WHERE t.id IS NOT NULL), '[]') as tags
       FROM applications a
@@ -27,14 +27,14 @@ class HRCandidatesRepository {
     }
 
     if (filters.search) {
-      query += ` AND (c.first_name ILIKE $${valIdx} OR c.last_name ILIKE $${valIdx} OR j.title ILIKE $${valIdx})`;
+      query += ` AND (cp.full_name ILIKE $${valIdx} OR j.title ILIKE $${valIdx})`;
       values.push(`%${filters.search}%`);
       valIdx++;
     }
 
     query += `
-      GROUP BY a.id, j.id, c.id, cp.candidate_id
-      ORDER BY (c.subscription_tier = 'premium') DESC, a.applied_at DESC
+      GROUP BY a.id, j.id, c.id, cp.candidate_id, cp.full_name, cp.headline, cp.phone
+      ORDER BY a.applied_at DESC
     `;
 
     const res = await db.query(query, values);
@@ -47,8 +47,8 @@ class HRCandidatesRepository {
       SELECT 
         a.*,
         j.title as job_title, j.department,
-        c.first_name, c.last_name, c.email,
-        cp.headline, cp.summary, cp.phone, cp.location,
+        c.email,
+        cp.full_name, cp.headline, cp.summary, cp.phone, cp.location,
         s.name as stage_name
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
@@ -81,12 +81,22 @@ class HRCandidatesRepository {
     const ansRes = await db.query(ansQuery, [applicationId]);
     application.answers = ansRes.rows;
 
+    // 3.5 Get Application Documents
+    const docQuery = `
+      SELECT id, label, file_url, created_at
+      FROM application_documents
+      WHERE application_id = $1
+      ORDER BY created_at ASC
+    `;
+    const docRes = await db.query(docQuery, [applicationId]);
+    application.documents = docRes.rows;
+
     // 4. Get Candidate Experiences, Education, Skills
     const candidateId = application.candidate_id;
     const expRes = await db.query('SELECT * FROM candidate_experiences WHERE candidate_id = $1 ORDER BY start_date DESC', [candidateId]);
     application.experiences = expRes.rows;
 
-    const eduRes = await db.query('SELECT * FROM candidate_educations WHERE candidate_id = $1 ORDER BY end_date DESC NULLS FIRST', [candidateId]);
+    const eduRes = await db.query('SELECT * FROM candidate_educations WHERE candidate_id = $1 ORDER BY end_year DESC NULLS FIRST', [candidateId]);
     application.educations = eduRes.rows;
 
     const skillRes = await db.query('SELECT * FROM candidate_skills WHERE candidate_id = $1', [candidateId]);
@@ -106,7 +116,7 @@ class HRCandidatesRepository {
   }
 
   async updateDecision(applicationId, companyId, status) {
-    const client = await db.connect();
+    const client = await db.getClient();
     try {
       await client.query('BEGIN');
 
@@ -147,11 +157,16 @@ class HRCandidatesRepository {
         description: `Kandidat diubah status lamarannya menjadi ${status}.`
       });
 
-      // If hired, increment job filled_count
+      // If hired, increment job filled_count and auto-close if full
       if (status === 'hired') {
         await client.query(`
           UPDATE jobs
-          SET filled_count = filled_count + 1
+          SET 
+            filled_count = filled_count + 1,
+            status = CASE 
+              WHEN filled_count + 1 >= positions_available THEN 'closed'
+              ELSE status
+            END
           WHERE id = $1
         `, [job_id]);
       }

@@ -3,7 +3,7 @@ const db = require('../config/db');
 class HRScoresRepository {
   async getScores(applicationId) {
     const query = `
-      SELECT s.*, m.first_name, m.last_name, m.role
+      SELECT s.*, m.name as first_name, '' as last_name, m.role
       FROM candidate_scores s
       JOIN company_members m ON s.company_member_id = m.id
       WHERE s.application_id = $1

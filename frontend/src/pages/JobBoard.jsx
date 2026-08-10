@@ -43,6 +43,7 @@ const JobBoard = () => {
   const [sortPriority, setSortPriority] = useState(['terbaru']);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [savedJobs, setSavedJobs] = useState([]);
+  const [showFilter, setShowFilter] = useState(false);
 
   const availableSorts = [
     { id: 'terbaru', label: 'Terbaru' },
@@ -230,8 +231,26 @@ const JobBoard = () => {
         </div>
       </section>
 
-      <main className="max-w-container mx-auto px-6 py-10 grid lg:grid-cols-[260px_1fr] gap-8 flex-1 w-full">
-        <aside className="space-y-6">
+      <main className="max-w-container mx-auto px-6 py-10 grid lg:grid-cols-[260px_1fr] gap-8 flex-1 w-full relative">
+        <div className="flex items-center justify-between lg:hidden mb-4 col-span-1">
+          <button onClick={() => setShowFilter(true)} className="flex items-center gap-2 text-ink-700 bg-white border border-canvas-border px-4 py-2 rounded-md shadow-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filter Lowongan
+          </button>
+        </div>
+        
+        {/* Backdrop for mobile */}
+        {showFilter && (
+          <div className="fixed inset-0 bg-ink-900/50 z-40 lg:hidden" onClick={() => setShowFilter(false)}></div>
+        )}
+
+        <aside className={`space-y-6 fixed inset-x-0 bottom-0 z-50 bg-white p-6 rounded-t-2xl shadow-xl transition-transform duration-300 lg:static lg:p-0 lg:bg-transparent lg:shadow-none lg:z-auto lg:rounded-none lg:translate-y-0 max-h-[85vh] overflow-y-auto ${showFilter ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className="flex items-center justify-between lg:hidden mb-4 pb-4 border-b border-canvas-border">
+            <h2 className="text-heading-md font-semibold text-ink-700">Filter</h2>
+            <button onClick={() => setShowFilter(false)} className="p-2 text-ink-500 hover:text-ink-700">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
           <div>
             <h3 className="text-body-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Jenis Pekerjaan</h3>
             <div className="flex flex-wrap gap-2">

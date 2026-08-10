@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 class CandidateApplicationRepository {
   async applyForJob(candidateId, data) {
-    const { job_id, resume_url, cover_letter, source, answers } = data;
+    const { job_id, documents, cover_letter, source, answers } = data;
 
     // Start transaction
     const client = await db.getClient();
@@ -33,15 +33,26 @@ class CandidateApplicationRepository {
       // 3. Insert into applications
       const applyQuery = `
         INSERT INTO applications (
-          job_id, candidate_id, current_stage_id, status, cover_letter, resume_url, source
+          job_id, candidate_id, current_stage_id, status, cover_letter, source
         ) VALUES (
-          $1, $2, $3, 'active', $4, $5, $6
+          $1, $2, $3, 'active', $4, $5
         ) RETURNING id
       `;
       const applyRes = await client.query(applyQuery, [
-        job_id, candidateId, currentStageId, cover_letter, resume_url, source
+        job_id, candidateId, currentStageId, cover_letter, source
       ]);
       const applicationId = applyRes.rows[0].id;
+
+      // 3.5 Insert into application_documents
+      if (documents && documents.length > 0) {
+        for (const doc of documents) {
+          const docQuery = `
+            INSERT INTO application_documents (application_id, label, file_url)
+            VALUES ($1, $2, $3)
+          `;
+          await client.query(docQuery, [applicationId, doc.label || 'Document', doc.file_url]);
+        }
+      }
 
       // 4. Insert custom answers if any
       if (answers && answers.length > 0) {
@@ -120,6 +131,16 @@ class CandidateApplicationRepository {
       `;
       const ansRes = await db.query(ansQuery, [applicationId]);
       application.answers = ansRes.rows;
+
+      // Get documents
+      const docsQuery = `
+        SELECT label, file_url, created_at
+        FROM application_documents
+        WHERE application_id = $1
+        ORDER BY created_at ASC
+      `;
+      const docsRes = await db.query(docsQuery, [applicationId]);
+      application.documents = docsRes.rows;
 
       // Get interviews scheduled for this application (public info only — no internal notes)
       const intQuery = `

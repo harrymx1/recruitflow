@@ -164,15 +164,25 @@ const CandidateApplicationDetail = () => {
       {/* Dokumen yang dipakai */}
       <div className="bg-white border border-canvas-border rounded-lg p-6 mb-6 shadow-sm">
         <h2 className="text-heading-md font-semibold text-ink-700 mb-4">Dokumen Lamaran Ini</h2>
-        <div className="flex items-center gap-3 border border-canvas-border rounded-md p-3 bg-gray-50/50">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F6F78" strokeWidth="1.75">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
-          </svg>
-          <span className="text-body-md text-ink-700 flex-1">
-            {app.resume_url ? (app.resume_url.split('/').pop() || 'Resume Dokumen') : 'CV Tersimpan'}
-          </span>
-          <span className="text-body-sm text-ink-300 font-mono">Snapshot saat melamar</span>
-        </div>
+        {app.documents && app.documents.length > 0 ? (
+          <div className="space-y-3">
+            {app.documents.map((doc, idx) => (
+              <div key={idx} className="flex items-center gap-3 border border-canvas-border rounded-md p-3 bg-gray-50/50">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F6F78" strokeWidth="1.75">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+                </svg>
+                <span className="text-body-md text-ink-700 flex-1">
+                  {doc.label} - {doc.file_url.split('/').pop() || 'Dokumen'}
+                </span>
+                <span className="text-body-sm text-ink-300 font-mono">Snapshot saat melamar</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 border border-canvas-border rounded-md p-3 bg-gray-50/50">
+            <span className="text-body-md text-ink-700 flex-1 italic text-ink-400">Tidak ada dokumen tersimpan</span>
+          </div>
+        )}
       </div>
 
       {/* Aksi */}

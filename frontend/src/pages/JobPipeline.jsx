@@ -18,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // --- SORTABLE ITEM COMPONENT ---
-const SortableItem = ({ id, application }) => {
+const SortableItem = ({ id, application, stages, onManualMove }) => {
   const {
     attributes,
     listeners,
@@ -57,8 +57,22 @@ const SortableItem = ({ id, application }) => {
             <p className="text-body-sm text-ink-400 truncate">{application.headline || 'Kandidat'}</p>
           </div>
         </div>
-        <div className="text-xs text-ink-300 mt-3 pt-2 border-t border-gray-100 flex justify-between">
+        <div className="text-xs text-ink-300 mt-3 pt-2 border-t border-gray-100 flex justify-between items-center relative z-10">
           <span>{new Date(application.applied_at).toLocaleDateString()}</span>
+          <select 
+            value={application.current_stage_id} 
+            onChange={(e) => onManualMove(application.id, e.target.value)}
+            className="text-[10px] border border-canvas-border rounded px-1 py-0.5 bg-gray-50 text-ink-500 cursor-pointer hover:border-teal-500 hover:text-teal-700 outline-none capitalize max-w-[100px] truncate"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <option disabled value="">Pindahkan ke...</option>
+            {stages?.map(s => (
+              <option key={s.id} value={s.id} disabled={s.id === application.current_stage_id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       {/* Clickable link to detail */}
@@ -73,11 +87,11 @@ const SortableItem = ({ id, application }) => {
 };
 
 // --- DROPPABLE COLUMN COMPONENT ---
-const Column = ({ stage, applications }) => {
+const Column = ({ stage, applications, stages, onManualMove }) => {
   return (
-    <div className="bg-gray-50 flex-shrink-0 w-80 rounded-lg border border-canvas-border flex flex-col max-h-full">
+    <div className="bg-gray-50 flex-shrink-0 w-[85vw] sm:w-80 rounded-lg border border-canvas-border flex flex-col max-h-full snap-center">
       <div className="p-3 border-b border-canvas-border flex items-center justify-between">
-        <h3 className="font-semibold text-ink-700">{stage.name}</h3>
+        <h3 className="font-semibold text-ink-700 capitalize">{stage.name}</h3>
         <span className="bg-white text-ink-500 text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
           {applications.length}
         </span>
@@ -90,7 +104,7 @@ const Column = ({ stage, applications }) => {
           strategy={verticalListSortingStrategy}
         >
           {applications.map(app => (
-            <SortableItem key={app.id} id={app.id} application={app} />
+            <SortableItem key={app.id} id={app.id} application={app} stages={stages} onManualMove={onManualMove} />
           ))}
           {applications.length === 0 && (
             <div className="h-20 border-2 border-dashed border-gray-200 rounded-md flex items-center justify-center text-ink-300 text-body-sm">
@@ -149,6 +163,23 @@ const JobPipeline = () => {
     setActiveId(event.active.id);
   };
 
+  const handleManualMove = async (applicationId, newStageId) => {
+    const app = applications.find(a => a.id === applicationId);
+    if (!app || app.current_stage_id === newStageId) return;
+
+    setApplications(prev => prev.map(a => 
+      a.id === applicationId ? { ...a, current_stage_id: newStageId } : a
+    ));
+
+    try {
+      await api.patch(`/dashboard/applications/${applicationId}/stage`, { newStageId });
+    } catch (err) {
+      console.error(err);
+      alert('Gagal memindahkan kandidat');
+      fetchPipeline(); // revert
+    }
+  };
+
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     setActiveId(null);
@@ -191,9 +222,9 @@ const JobPipeline = () => {
 
   const activeApp = activeId ? applications.find(a => a.id === activeId) : null;
 
-  // Separate stages (normal vs rejected/withdrawn)
-  const mainStages = stages.filter(s => !['rejected', 'withdrawn'].includes(s.anchor_type));
-  const otherStages = stages.filter(s => ['rejected', 'withdrawn'].includes(s.anchor_type));
+  // Separate stages (normal vs rejected/withdrawn) - filter by name since anchor_type = 'anchor'|'custom'
+  const mainStages = stages.filter(s => !['rejected', 'withdrawn'].includes(s.name));
+  const otherStages = stages.filter(s => ['rejected', 'withdrawn'].includes(s.name));
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col">
@@ -209,7 +240,7 @@ const JobPipeline = () => {
         </div>
       </header>
 
-      <main className="flex-1 p-6 overflow-x-auto flex gap-6 items-start h-[calc(100vh-64px)]">
+      <main className="flex-1 p-6 overflow-x-auto flex gap-6 items-start h-[calc(100vh-64px)] snap-x snap-mandatory">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -220,7 +251,9 @@ const JobPipeline = () => {
             <Column 
               key={stage.id} 
               stage={stage} 
-              applications={applications.filter(a => a.current_stage_id === stage.id)} 
+              applications={applications.filter(a => a.current_stage_id === stage.id)}
+              stages={stages}
+              onManualMove={handleManualMove} 
             />
           ))}
 
@@ -230,7 +263,9 @@ const JobPipeline = () => {
                 <Column 
                   key={stage.id} 
                   stage={stage} 
-                  applications={applications.filter(a => a.current_stage_id === stage.id)} 
+                  applications={applications.filter(a => a.current_stage_id === stage.id)}
+                  stages={stages}
+                  onManualMove={handleManualMove} 
                 />
               ))}
             </div>

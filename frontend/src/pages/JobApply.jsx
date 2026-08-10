@@ -111,12 +111,13 @@ const JobApply = () => {
     }));
 
     try {
-      await axios.post(`http://localhost:5000/api/candidate/jobs/${jobId}/apply`, {
-        resume_url: selectedDocumentUrl,
+      const payload = {
+        documents: [{ label: 'CV', file_url: selectedDocumentUrl }],
         cover_letter: coverLetter,
         source: source,
         answers: formattedAnswers
-      }, {
+      };
+      await axios.post(`http://localhost:5000/api/candidate/applications/${jobId}/apply`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

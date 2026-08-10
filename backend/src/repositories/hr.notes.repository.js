@@ -3,7 +3,7 @@ const db = require('../config/db');
 class HRNotesRepository {
   async getNotes(applicationId) {
     const query = `
-      SELECT n.*, m.first_name, m.last_name, m.role
+      SELECT n.*, m.name as first_name, '' as last_name, m.role
       FROM application_notes n
       JOIN company_members m ON n.company_member_id = m.id
       WHERE n.application_id = $1
@@ -23,7 +23,7 @@ class HRNotesRepository {
     
     // Fetch with member info to return full object
     const fetchQuery = `
-      SELECT n.*, m.first_name, m.last_name, m.role
+      SELECT n.*, m.name as first_name, '' as last_name, m.role
       FROM application_notes n
       JOIN company_members m ON n.company_member_id = m.id
       WHERE n.id = $1

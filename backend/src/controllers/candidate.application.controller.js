@@ -5,6 +5,9 @@ class CandidateApplicationController {
     try {
       const candidateId = req.candidate.id; // from auth middleware
       const { jobId } = req.params;
+      if (!req.body.documents || req.body.documents.length === 0) {
+        return res.status(400).json({ success: false, message: 'Dokumen CV/resume wajib disertakan' });
+      }
       const data = { ...req.body, job_id: jobId };
 
       const result = await candidateApplicationRepository.applyForJob(candidateId, data);

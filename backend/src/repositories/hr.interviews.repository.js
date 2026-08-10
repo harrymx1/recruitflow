@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 class HRInterviewsRepository {
-  async scheduleInterview(applicationId, companyId, data) {
+  async scheduleInterview(applicationId, companyId, actorId, data) {
     const { title, scheduled_at, duration_minutes, meeting_link, location, notes } = data;
     
     // Verify application belongs to this company
@@ -27,7 +27,7 @@ class HRInterviewsRepository {
     await activityLogsRepository.logActivity({
       application_id: applicationId,
       actor_type: 'company_member',
-      actor_id: null,
+      actor_id: actorId,
       action_type: 'Jadwal Wawancara Dibuat',
       description: `Wawancara '${title}' dijadwalkan pada ${new Date(scheduled_at).toLocaleString('id-ID')}.`
     });
@@ -41,11 +41,12 @@ class HRInterviewsRepository {
         i.*,
         a.candidate_id, a.job_id,
         j.title as job_title,
-        c.first_name, c.last_name, c.email
+        cp.full_name as first_name, '' as last_name, c.email
       FROM interviews i
       JOIN applications a ON i.application_id = a.id
       JOIN jobs j ON a.job_id = j.id
       JOIN candidates c ON a.candidate_id = c.id
+      LEFT JOIN candidate_profiles cp ON c.id = cp.candidate_id
       WHERE i.company_id = $1
       ORDER BY i.scheduled_at ASC
     `;
@@ -93,7 +94,7 @@ class HRInterviewsRepository {
       UPDATE interviews
       SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND company_id = $2
-      RETURNING id
+      RETURNING id, application_id
     `;
     const res = await db.query(query, [interviewId, companyId]);
     if (res.rows.length === 0) throw new Error('Wawancara tidak ditemukan');

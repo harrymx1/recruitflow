@@ -30,6 +30,15 @@ class AnalyticsController {
       next(err);
     }
   }
+  async getTimeToHire(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const data = await analyticsRepository.getTimeToHire(companyId);
+      res.json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new AnalyticsController();

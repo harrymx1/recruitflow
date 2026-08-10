@@ -15,6 +15,7 @@ const JobForm = () => {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [profileComplete, setProfileComplete] = useState(true);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -56,10 +57,24 @@ const JobForm = () => {
   };
 
   useEffect(() => {
+    checkProfileComplete();
     if (isEdit) {
       fetchJob();
     }
   }, [id]);
+
+  const checkProfileComplete = async () => {
+    try {
+      const res = await api.get('/dashboard/company/profile');
+      const data = res.data.data;
+      if (data) {
+        const isComplete = data.name && data.industry && data.description;
+        setProfileComplete(!!isComplete);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchJob = async () => {
     try {
@@ -397,12 +412,19 @@ const JobForm = () => {
             </div>
 
             <div className="flex items-center justify-end gap-3 pb-8">
-              <button onClick={() => handleSave(false)} disabled={saving} className="text-ink-700 border border-canvas-border hover:bg-gray-50 font-medium text-body-md px-5 py-2.5 rounded-md disabled:opacity-50">
+              <button type="button" onClick={() => handleSave(false)} disabled={saving} className="text-ink-700 border border-canvas-border hover:bg-gray-50 font-medium text-body-md px-5 py-2.5 rounded-md disabled:opacity-50">
                 Simpan sebagai Draft
               </button>
-              <button onClick={() => handleSave(true)} disabled={saving} className="bg-amber-500 hover:bg-amber-600 text-ink-700 font-semibold text-body-md px-6 py-2.5 rounded-md transition-colors disabled:opacity-50">
-                Publish Lowongan
-              </button>
+              <div className="relative group">
+                <button type="button" onClick={() => handleSave(true)} disabled={saving || !profileComplete} className="bg-amber-500 hover:bg-amber-600 text-ink-700 font-semibold text-body-md px-6 py-2.5 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  Publish Lowongan
+                </button>
+                {!profileComplete && (
+                  <div className="absolute bottom-full mb-2 right-0 w-max bg-ink-700 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    Lengkapi profil perusahaan untuk mempublish
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>

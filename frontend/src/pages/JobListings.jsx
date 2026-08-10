@@ -68,7 +68,14 @@ const JobListings = () => {
             {loading ? (
               <tr><td colSpan="6" className="text-center py-8 text-ink-300">Memuat data...</td></tr>
             ) : filteredJobs.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-8 text-ink-300">Belum ada data lowongan</td></tr>
+              <tr>
+                <td colSpan="6" className="text-center py-12">
+                  <div className="flex flex-col items-center justify-center">
+                    <p className="text-ink-500 mb-4 text-body-md">Belum ada data lowongan</p>
+                    <Link to="/dashboard/jobs/new" className="bg-amber-500 hover:bg-amber-600 text-ink-700 font-semibold text-body-sm px-4 py-2 rounded-md transition-colors">+ Buat Lowongan Baru</Link>
+                  </div>
+                </td>
+              </tr>
             ) : filteredJobs.map(job => (
               <tr key={job.id} className={`border-b border-canvas-border hover:bg-gray-50 ${job.status === 'closed' ? 'opacity-70' : ''}`}>
                 <td className="px-5 py-4"><Link to={`/dashboard/jobs/${job.id}`} className="font-medium text-ink-700 hover:text-teal-700">{job.title}</Link></td>
