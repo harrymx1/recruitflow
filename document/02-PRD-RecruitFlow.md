@@ -1,31 +1,31 @@
 # Product Requirements Document (PRD)
 ## RecruitFlow — Recruitment Management System
 
-*Dokumen ini merupakan turunan dari Product Definition Document (PDD) dan menjadi acuan detail fitur untuk tahap UI/UX Specification & System Design.*
+*Dokumen ini merupakan turunan dari Product Definition Document (PDD) dan menjadi acuan detail fitur untuk tahap UI/UX Specification, System Design, serta Perancangan Test Plan.*
 
-*Versi 3 — direvisi untuk mengakomodasi: (1) modul autentikasi kandidat tersendiri, (2) isolasi data lamaran lintas perusahaan, (3) pencegahan lamaran ganda & fitur withdraw, (4) status "Withdrawn" terpisah dari "Rejected", (5) pipeline yang dapat dikustomisasi per lowongan, (6) tracking sumber kandidat (opsional), (7) reschedule/cancel interview, (8) bookmark lowongan.*
+*Versi 4.0 — Disempurnakan secara komprehensif untuk mengeliminasi ambiguitas teknis dan operasional: (1) Spesifikasi field wajib kelengkapan profil perusahaan (FR-3.2), (2) Integritas snapshot dokumen lamaran & aturan re-apply, (3) State machine & aturan transisi pipeline Kanban (proteksi Withdrawn vs Re-evaluation Rejected), (4) Rumus matematis Time-to-Hire, (5) Decoupled email transaction pada Decision, (6) Penegasan isolasi multi-tenant pada Tag & Catatan, (7) Spesifikasi teknis Ekspor CSV & keamanan berkas.*
 
 ---
 
 ## 1. Daftar Fitur (Feature List)
 
-| No | Modul | Fitur |
+| No | Modul | Fitur Utama |
 |---|---|---|
-| 1 | Workspace & Auth (Perusahaan) | Registrasi perusahaan, login, manajemen anggota tim (Admin/HR) |
-| 2 | Candidate Authentication | Registrasi & login akun kandidat (berlaku lintas perusahaan) |
-| 3 | Company Profile | Profil lengkap perusahaan yang tampil di halaman publik |
-| 4 | Job Posting | CRUD lowongan dengan detail lengkap, kuota, pipeline kustom |
-| 5 | Public Job Board | Halaman publik lintas perusahaan, search, filter majemuk, sort berprioritas, bookmark |
-| 6 | Candidate Profile & Application | Profil kandidat lengkap, lamaran menyeluruh, cegah lamaran ganda, withdraw |
-| 7 | Candidate Management (HR View) | Database kandidat, pencarian, filter, tagging (sisi HR) |
-| 8 | Pipeline | Kanban board tahapan seleksi (kustom per lowongan) |
-| 9 | Interview & Schedule | Penjadwalan, reschedule, & pembatalan interview |
-| 10 | Decision (Offer/Reject/Withdrawn) | Penentuan hasil akhir & surat resmi opsional |
-| 11 | Email Template | Manajemen template email formal (offer & reject) |
-| 12 | Notes & Scoring | Catatan internal & skor evaluasi kandidat |
-| 13 | Candidate Tracking Portal | Tracking status lamaran & lowongan tersimpan (publik) |
-| 14 | Analytics Dashboard | Statistik funnel, time-to-hire, sumber kandidat |
-| 15 | Activity Log | Riwayat aktivitas per kandidat/lowongan |
+| 1 | Workspace & Auth (Perusahaan) | Registrasi perusahaan, sesi aman, manajemen anggota tim & hak akses berbasis peran (Admin/HR) |
+| 2 | Candidate Authentication | Registrasi & login akun kandidat global lintas perusahaan |
+| 3 | Company Profile | Profil perusahaan komprehensif, validasi kelengkapan minimum sebelum publish |
+| 4 | Job Posting | CRUD lowongan kerja, custom questions, pipeline kustom, kuota posisi, auto-close & reopen |
+| 5 | Public Job Board | Job board publik lintas perusahaan, search, multi-filter, sort berprioritas berjenjang, bookmark |
+| 6 | Candidate Profile & Application | Profil lengkap reusable, koleksi CV berlabel, snapshot dokumen lamaran, pencegahan lamaran ganda, withdraw |
+| 7 | Candidate Management (HR View) | Database kandidat scoped-company, pencarian, filter, tagging internal terisolasi |
+| 8 | Pipeline (Kanban) | Kanban board dinamis per lowongan, anchor stages terlindungi, activity logging otomatis |
+| 9 | Interview & Schedule | Penjadwalan interview (ISO 8601 + Timezone), agenda kalender (grid bulanan/mingguan), reschedule, pembatalan |
+| 10 | Decision (Offer/Reject/Withdrawn) | Hasil akhir, decoupled email dispatch, kuota auto-increment atomik, audit log |
+| 11 | Email Template | Template kustom Offer & Reject dengan variabel dinamis |
+| 12 | Notes & Scoring | Catatan evaluasi internal (audit trail), skor individual 1–5, agregasi rata-rata otomatis |
+| 13 | Candidate Tracking Portal | Pemantauan status lamaran real-time, perlindungan data internal HR, withdraw mandiri |
+| 14 | Analytics Dashboard | Funnel conversion, rata-rata time-to-hire matematis, distribusi sumber pelamar, pemisahan metrik drop-off |
+| 15 | Activity Log | Audit trail kronologis per lamaran (aktor, waktu, jenis aksi, deskripsi) |
 
 ---
 
@@ -33,406 +33,335 @@
 
 ### 2.1 Modul: Workspace & Authentication (Perusahaan)
 
-**FR-1.1** Sistem harus mendukung multi-tenant, di mana setiap perusahaan memiliki workspace terisolasi (data tidak dapat diakses oleh workspace lain).
-**FR-1.2** Sistem menyediakan dua peran pengguna dalam satu workspace: **Admin** dan **HR/Recruiter**.
-**FR-1.3** Admin dapat mengundang/mengelola anggota tim (HR/Recruiter) dalam workspace-nya.
-**FR-1.4** Sistem menggunakan autentikasi berbasis email & password, dengan sesi yang aman (token-based).
+**FR-1.1** Sistem mendukung multi-tenant, di mana setiap perusahaan memiliki workspace terisolasi secara mutlak (data perusahaan A tidak dapat dilihat atau diakses oleh perusahaan B).  
+**FR-1.2** Sistem menyediakan dua peran pengguna internal dengan batasan wewenang jelas:
+- **Admin**: Pemilik/penanggung jawab workspace. Memiliki hak penuh atas konfigurasi perusahaan, billing/profil, mengundang/menonaktifkan anggota tim, serta seluruh operasional rekrutmen.
+- **HR/Recruiter**: Menjalankan operasional rekrutmen harian (membuat/mengelola lowongan, memproses pipeline pelamar, menjadwalkan interview, memberi catatan/skor). **Tidak memiliki hak** mengelola anggota tim atau mengubah konfigurasi inti perusahaan.  
+**FR-1.3** Admin dapat mengundang anggota tim baru melalui email dan menetapkan perannya.  
+**FR-1.4** Admin dapat menonaktifkan (`is_active = false`) anggota tim kapan saja. Anggota tim yang dinonaktifkan **segera dibatalkan sesinya** dan ditolak saat mengakses endpoint API berikutnya.  
+**FR-1.5** Sistem menggunakan autentikasi berbasis email unik & password ter-hash (bcrypt), dengan penerbitan Access Token (durasi pendek) dan Refresh Token (disimpan di HttpOnly Secure Cookie).
 
 **User Story US-1.1**
-> Sebagai calon pengguna, saya ingin mendaftarkan perusahaan saya ke RecruitFlow, agar saya bisa mulai menggunakan sistem untuk merekrut kandidat.
+> Sebagai pemilik perusahaan/HR Manager, saya ingin mendaftarkan perusahaan saya ke RecruitFlow, agar tim saya memiliki workspace resmi untuk mengelola proses rekrutmen terpusat.
 
 *Acceptance Criteria:*
-- Diberikan form registrasi (nama perusahaan, nama admin, email, password), ketika submit valid, maka workspace baru dibuat dan akun Admin otomatis aktif.
-- Ketika email sudah terdaftar, maka sistem menampilkan pesan error yang jelas.
+- Diberikan form registrasi (nama perusahaan, nama admin, email, password), ketika disubmit dengan data valid, maka record perusahaan dan akun Admin otomatis dibuat, token sesi diterbitkan, dan pengguna diarahkan ke alur melengkapi profil perusahaan.
+- Ketika email yang dimasukkan sudah terdaftar di sistem, sistem mengembalikan status error 400 dengan pesan "Email sudah terdaftar".
 
 **User Story US-1.2**
-> Sebagai Admin, saya ingin mengundang anggota tim HR lain ke workspace saya, agar kami bisa berkolaborasi mengelola rekrutmen.
+> Sebagai Admin, saya ingin mengundang recruiter ke workspace saya, agar beban kerja seleksi lowongan dapat dibagi bersama tim.
 
 *Acceptance Criteria:*
-- Diberikan email anggota baru, ketika Admin mengirim undangan, maka anggota menerima akses dengan role HR/Recruiter.
-- Admin dapat menghapus/menonaktifkan anggota tim kapan saja.
+- Diberikan form undang tim (nama, email, role: HR), ketika disubmit, maka akun anggota baru dibuat dengan status aktif.
+- Anggota dengan role HR yang mencoba mengakses endpoint manajemen tim (`/api/dashboard/company/team`) menerima respon 403 Forbidden.
 
 ---
 
 ### 2.2 Modul: Candidate Authentication
 
-Akun kandidat bersifat **global** — satu akun berlaku untuk melamar ke perusahaan manapun di platform, terpisah sepenuhnya dari sistem login perusahaan/HR.
+Akun kandidat bersifat **global** — satu akun berlaku untuk melamar ke perusahaan manapun di platform, terpisah sepenuhnya dari sistem akun perusahaan.
 
-**FR-2.1** Kandidat dapat mendaftar menggunakan email & password.
-**FR-2.2** Kandidat dapat login menggunakan kredensial yang sudah terdaftar.
-**FR-2.3** Kandidat dapat mereset password melalui tautan yang dikirim ke email terdaftar. *(Ini adalah email transaksional terkait keamanan akun, bukan update status lamaran — merupakan pengecualian yang wajar terhadap prinsip notifikasi pada bagian 3A.)*
-**FR-2.4** Satu akun kandidat menyimpan satu profil (lihat Modul 2.6) yang dapat digunakan untuk melamar ke lowongan di perusahaan manapun.
+**FR-2.1** Kandidat dapat mendaftar menggunakan nama lengkap, email unik, dan password.  
+**FR-2.2** Untuk meminimalkan friksi pelamaran (*conversion rate* tinggi), akun kandidat yang baru mendaftar **langsung berstatus aktif** tanpa kewajiban verifikasi email di awal.  
+**FR-2.3** Kandidat dapat login menggunakan kredensial email & password untuk mengakses portal pelamar dan profil reusable.  
+**FR-2.4** Kandidat dapat melakukan reset password melalui tautan token berbatas waktu (kedaluwarsa dalam 1 jam) yang dikirimkan ke email terdaftar (pengecualian keamanan terhadap prinsip notifikasi PRD Bagian 3A).  
+**FR-2.5** Satu akun kandidat menyimpan satu profil utama yang dapat dipakai berulang kali untuk melamar ke berbagai perusahaan tanpa pengisian ulang.
 
 **User Story US-2.1**
-> Sebagai pencari kerja, saya ingin membuat satu akun yang bisa saya pakai untuk melamar ke berbagai perusahaan di platform ini, agar saya tidak perlu mendaftar ulang setiap kali melamar ke perusahaan berbeda.
+> Sebagai pencari kerja, saya ingin membuat satu akun global yang dapat saya gunakan untuk melamar ke berbagai lowongan di banyak perusahaan, agar saya tidak perlu mengulang proses pendaftaran dari awal di setiap perusahaan yang berbeda.
 
 *Acceptance Criteria:*
-- Diberikan akun kandidat yang sudah dibuat, ketika kandidat melamar ke lowongan dari perusahaan berbeda-beda, maka kandidat cukup login dengan satu akun yang sama.
+- Kandidat yang sudah terdaftar dapat langsung login dan melamar ke Lowongan Perusahaan A maupun Lowongan Perusahaan B menggunakan akun dan profil yang sama.
 
 ---
 
-### 2.3 Modul: Company Profile
+### 2.3 Modul: Company Profile & Syarat Kelengkapan
 
-Profil perusahaan harus cukup lengkap sehingga kandidat dapat mengenal perusahaan sepenuhnya tanpa perlu mencari informasi dari sumber lain, dan cukup meyakinkan sebagai "halaman etalase" perusahaan di job board publik.
-
-**FR-3.1** Admin dapat melengkapi profil perusahaan dengan:
+**FR-3.1** Perusahaan dapat melengkapi profil perusahaannya dengan:
 - Logo & banner perusahaan
 - Nama perusahaan & tagline singkat
 - Industri/sektor bisnis
-- Ukuran perusahaan (rentang jumlah karyawan)
-- Tahun berdiri
-- Lokasi kantor (dapat lebih dari satu cabang)
-- Website resmi & tautan sosial media (LinkedIn, Instagram, dll.)
-- Deskripsi perusahaan (rich text — visi, budaya kerja, dll.)
-- Daftar benefit/fasilitas umum perusahaan (mis. asuransi kesehatan, kerja remote, cuti tambahan)
-- Galeri foto (opsional — suasana kantor/kegiatan tim)
+- Ukuran perusahaan (rentang karyawan: `1-10`, `11-50`, `51-200`, `201-500`, `500+`)
+- Tahun berdiri & website resmi
+- Lokasi kantor (dapat multi-cabang, minimal satu kantor ditandai sebagai `Headquarters`)
+- Tautan media sosial (LinkedIn, Instagram, X/Twitter, Facebook)
+- Deskripsi perusahaan (rich text)
+- Benefit/fasilitas umum perusahaan (tagging/list)
+- Galeri foto suasana kantor (opsional)
 
-**FR-3.2** Profil perusahaan yang belum lengkap (field wajib minimum belum terisi) tidak dapat mempublikasikan lowongan — mencegah lowongan tampil tanpa konteks perusahaan yang memadai.
-**FR-3.3** Halaman profil perusahaan dapat diakses publik, menampilkan seluruh informasi di atas beserta daftar lowongan aktif dari perusahaan tersebut.
+**FR-3.2 (Definisi Field Wajib Minimum Kelengkapan Profil):**  
+Sistem memberlakukan validasi `is_profile_complete`. Profil perusahaan dinyatakan **LENGKAP** dan berhak mempublikasikan lowongan jika dan hanya jika seluruh kriteria berikut terpenuhi:
+1. Nama Perusahaan terisi.
+2. Industri terisi.
+3. Ukuran Perusahaan terisi.
+4. Minimal 1 Lokasi Kantor terdaftar dan ditandai sebagai Kantor Pusat (*Headquarters*).
+5. Deskripsi Perusahaan terisi minimal 50 karakter.  
+*Logo, banner, sosial media, dan galeri bersifat opsional dan tidak memblokir publikasi lowongan.*
+
+**FR-3.3** Profil perusahaan yang belum memenuhi syarat kelengkapan FR-3.2 **dilarang mempublikasikan (*publish*) lowongan**. Tombol publish pada lowongan dinonaktifkan dengan tooltip/peringatan jelas yang mengarahkan HR untuk melengkapi profil terlebih dahulu.  
+**FR-3.4** Profil perusahaan yang telah terisi dapat diakses publik (`/companies/:slug`) menampilkan informasi perusahaan dan daftar lowongan yang sedang aktif dibuka.
 
 **User Story US-3.1**
-> Sebagai Admin, saya ingin melengkapi profil perusahaan saya secara detail, agar kandidat memiliki gambaran menyeluruh tentang perusahaan sebelum melamar.
+> Sebagai Admin, saya ingin melengkapi identitas perusahaan saya, agar kandidat mendapatkan informasi yang kredibel dan meyakinkan sebelum memutuskan melamar.
 
 *Acceptance Criteria:*
-- Diberikan field wajib profil perusahaan (nama, industri, lokasi, deskripsi minimum), ketika belum terisi lengkap, maka sistem mencegah publish lowongan dan menampilkan indikator kelengkapan profil.
-- Diberikan profil lengkap, ketika kandidat membuka halaman perusahaan, maka seluruh informasi (deskripsi, benefit, lokasi, lowongan aktif) tampil dengan baik.
+- Ketika profil perusahaan belum memiliki kantor pusat (HQ) atau deskripsi < 50 karakter, sistem menolak aksi publish lowongan dengan pesan "Lengkapi profil perusahaan Anda terlebih dahulu sebelum mempublikasikan lowongan".
+- Ketika field wajib telah terpenuhi, status kelengkapan profil bernilai `true` dan lowongan dapat dipublish seketika.
 
 ---
 
-### 2.4 Modul: Job Posting
+### 2.4 Modul: Job Posting & Manajemen Kuota
 
-Form pembuatan lowongan dirancang selengkap mungkin agar HR tidak perlu mencantumkan tautan eksternal (mis. Google Form) hanya karena sistem dianggap kurang detail.
-
-**FR-4.1** HR/Admin dapat membuat lowongan dengan detail:
-- Judul posisi & departemen/kategori
-- Jenis pekerjaan: Full-time, Part-time, Kontrak, Magang/Internship, Freelance
-- Pengaturan kerja: On-site, Remote, Hybrid
-- Lokasi penempatan
-- Level pengalaman: Entry-level, Mid-level, Senior, Manajerial
-- Pendidikan minimum yang dibutuhkan
-- Jumlah kuota/posisi yang dibuka
-- Rentang gaji (opsional ditampilkan publik atau disembunyikan — pilihan HR)
-- Deskripsi pekerjaan (rich text)
-- Tanggung jawab (job responsibilities — list)
-- Kualifikasi wajib (requirements — list)
-- Kualifikasi nilai tambah (preferred/nice-to-have — list)
+**FR-4.1** HR/Admin dapat membuat dan menyunting lowongan kerja dengan spesifikasi terstruktur:
+- Judul posisi & departemen
+- Jenis pekerjaan: *Full-time, Part-time, Kontrak, Magang/Internship, Freelance*
+- Pengaturan kerja: *On-site, Remote, Hybrid*
+- Lokasi penempatan kantor (merujuk ke daftar lokasi perusahaan)
+- Level pengalaman: *Entry-level, Mid-level, Senior, Lead/Managerial*
+- Jumlah kuota/posisi yang dibuka (`positions_available`, integer positif >= 1)
+- Rentang gaji minimum & maksimum (beserta opsi sembunyikan dari publik)
+- Deskripsi pekerjaan, Tanggung Jawab (*responsibilities*), dan Kualifikasi (*requirements*) dalam format rich text
 - Keahlian yang dibutuhkan (skill tags)
-- Benefit spesifik posisi ini (opsional, melengkapi benefit umum perusahaan)
-- Batas akhir pelamaran (deadline) — opsional
-- **Pertanyaan seleksi tambahan (custom application questions)** — HR dapat menambahkan pertanyaan spesifik untuk lowongan ini (pilihan ganda/isian singkat/esai), yang akan dijawab kandidat saat melamar
+- Benefit spesifik posisi
+- Batas akhir pelamaran (*deadline*, opsional dengan batas waktu pukul 23:59:59 WIB pada tanggal terpilih)
+- **Pertanyaan seleksi kustom (Custom Questions)**: Tipe isian singkat, pilihan ganda (*multiple choice*), atau esai, dengan penanda wajib/opsional per pertanyaan.
 
-**FR-4.2** Lowongan memiliki status: **Draft**, **Published**, **Closed**.
-**FR-4.3** Hanya lowongan berstatus *Published* yang tampil di Public Job Board.
-**FR-4.4** Sistem menampilkan jumlah kuota terisi vs total kuota pada setiap lowongan (mis. "3 dari 5 posisi terisi"). Lowongan **otomatis berstatus Closed** ketika seluruh kuota terisi (seluruh posisi ber-status Hired), atau ketika tanggal deadline (jika diisi) telah lewat — mana yang tercapai lebih dulu. HR tetap dapat membuka kembali (reopen) lowongan secara manual jika diperlukan (mis. ada kandidat yang mengundurkan diri setelah offer).
-**FR-4.5** HR/Admin dapat mengedit atau menutup (close) lowongan kapan saja secara manual.
-**FR-4.6** Saat membuat lowongan, HR dapat menentukan **tahapan pipeline** yang akan digunakan untuk lowongan tersebut (lihat Modul 2.8 untuk detail aturan kustomisasi).
+**FR-4.2** Status Lowongan terdiri dari: **Draft**, **Published**, dan **Closed**. Hanya status *Published* yang tampil di Public Job Board.  
+**FR-4.3 (Aturan Auto-Close Lowongan):**  
+Sistem secara otomatis mengubah status lowongan menjadi **Closed** ketika:
+1. Seluruh kuota telah terpenuhi (`filled_count >= positions_available`, saat kandidat terakhir berstatus *Hired*); ATAU
+2. Tanggal deadline telah terlewati (dicek melalui *cron job* harian pukul 00:01 WIB).  
+**FR-4.4 (Penanganan Pelamar Saat Lowongan Closed):**  
+Ketika lowongan beralih ke status *Closed*, tombol "Lamar Sekarang" di portal publik dinonaktifkan. Namun, seluruh kandidat yang sudah melamar dan sedang berada di tahap aktif pipeline **tetap dapat diproses hingga tuntas oleh HR**.  
+**FR-4.5 (Aturan Reopen Lowongan):**  
+HR/Admin dapat membuka kembali (*reopen*) lowongan yang berstatus *Closed*.  
+*Aturan integritas kuota:* Jika lowongan sebelumnya ditutup karena kuota penuh, HR **wajib menaikkan nilai `positions_available`** (kuota baru > kuota lama) sebelum sistem mengizinkan status beralih kembali ke *Published*.
 
 **User Story US-4.1**
-> Sebagai HR, saya ingin membuat lowongan kerja dengan seluruh detail yang dibutuhkan kandidat, termasuk pertanyaan seleksi khusus, agar saya tidak perlu mengarahkan kandidat ke formulir eksternal.
+> Sebagai HR, saya ingin menentukan pertanyaan kustom pada lowongan kerja, agar saya dapat menyaring kualifikasi spesifik pelamar sejak awal proses tanpa form eksternal.
 
 *Acceptance Criteria:*
-- Diberikan form job posting, HR dapat mengisi seluruh field di atas termasuk menambahkan custom question (minimal 0, tidak dibatasi maksimum yang wajar).
-- Ketika lowongan di-publish, maka seluruh informasi dan pertanyaan tambahan tampil pada form aplikasi yang dilihat kandidat.
+- HR dapat menambahkan pertanyaan custom wajib dan opsional.
+- Kandidat yang melamar tidak dapat melanjutkan ke step berikutnya jika pertanyaan wajib belum dijawab.
 
 **User Story US-4.2**
-> Sebagai HR, saya ingin lowongan otomatis ditutup ketika kuota sudah terisi penuh, agar saya tidak perlu terus memantau dan menutupnya secara manual.
+> Sebagai HR, saya ingin sistem otomatis menutup lowongan saat kuota pelamar yang diterima sudah terpenuhi, agar perusahaan tidak kebanjiran lamaran baru untuk posisi yang sudah terisi.
 
 *Acceptance Criteria:*
-- Diberikan lowongan dengan kuota 3 posisi, ketika kandidat ke-3 berstatus "Hired", maka status lowongan otomatis berubah menjadi "Closed" dan tidak lagi tampil di Job Board.
+- Diberikan lowongan dengan kuota 2 posisi (`positions_available = 2`, `filled_count = 1`).
+- Ketika HR menerima kandidat kedua menjadi "Hired", `filled_count` menjadi 2 dan status lowongan otomatis berubah menjadi "Closed".
+- Lowongan tidak lagi muncul di Public Job Board publik.
 
 ---
 
-### 2.5 Modul: Public Job Board
+### 2.5 Modul: Public Job Board & Sort Berprioritas
 
-Halaman publik utama menampilkan **seluruh lowongan dari seluruh perusahaan** (bukan per perusahaan saja), dilengkapi pencarian, filter majemuk, sistem pengurutan (sort) berbasis prioritas, dan bookmark.
-
-**FR-5.1** Halaman job board menampilkan seluruh lowongan berstatus *Published* dari seluruh perusahaan yang terdaftar.
-**FR-5.2** Sistem menyediakan kolom pencarian berbasis kata kunci (judul posisi, perusahaan, skill).
-**FR-5.3** Sistem menyediakan filter yang dapat dipilih lebih dari satu nilai sekaligus (multi-select) per kategori, dan dapat dikombinasikan antar kategori filter:
-- Lokasi (kota/provinsi/remote)
-- Jenis pekerjaan (Full-time, Part-time, Kontrak, Magang, Freelance)
-- Pengaturan kerja (On-site, Remote, Hybrid)
-- Level pengalaman (Entry, Mid, Senior, Manajerial)
-- Kategori/departemen
-- Rentang gaji (jika tersedia/ditampilkan)
-- Perusahaan tertentu (opsional, untuk pengguna yang ingin fokus ke perusahaan tertentu)
-
-**FR-5.4** Sistem menyediakan opsi pengurutan (sort) berikut:
-- Paling Relevan (berdasarkan kecocokan kata kunci pencarian)
-- Terbaru (tanggal publish)
-- Kuota Terbanyak
-- Pelamar Tersedikit
-- Pelamar Terbanyak
-- Batas Waktu Terdekat (deadline segera berakhir)
-
-**FR-5.5** Pengguna dapat memilih **lebih dari satu kriteria sort sekaligus** dan **mengatur urutan prioritasnya** (mis. prioritas 1: Relevan, prioritas 2: Terbaru, prioritas 3: Kuota Terbanyak, dst). Sistem mengurutkan data berdasarkan kriteria prioritas pertama; jika terdapat kesamaan nilai (tie), pengurutan dilanjutkan berdasarkan kriteria prioritas berikutnya, dan seterusnya secara berjenjang.
-**FR-5.6** Pengguna dapat mengubah urutan prioritas kriteria sort yang sudah dipilih (reorder), maupun menghapus salah satu kriteria dari daftar prioritas.
-**FR-5.7** Filter dan sort yang dipilih tercermin pada URL (query parameter), sehingga hasil pencarian dapat dibagikan atau di-bookmark.
-**FR-5.8** Kandidat dapat mengklik lowongan untuk melihat detail lengkap dan melamar langsung dari halaman ini.
-**FR-5.9** Kandidat yang sudah login dapat **menyimpan (bookmark)** lowongan untuk dilihat/dilamar kembali nanti, dapat diakses melalui Candidate Tracking Portal (lihat FR-13.4).
-
-**User Story US-5.1**
-> Sebagai pencari kerja, saya ingin mencari lowongan dari berbagai perusahaan sekaligus dengan filter yang bisa dikombinasikan, agar saya bisa menemukan lowongan yang paling sesuai dengan preferensi saya secara efisien.
-
-*Acceptance Criteria:*
-- Diberikan beberapa filter aktif sekaligus (mis. Lokasi: Jakarta + Bandung, Jenis: Full-time + Remote), ketika diterapkan, maka hasil menampilkan lowongan yang memenuhi kombinasi filter tersebut (logika OR di dalam kategori yang sama, AND antar kategori berbeda).
-
-**User Story US-5.2**
-> Sebagai pencari kerja, saya ingin menyusun beberapa kriteria pengurutan sesuai prioritas saya sendiri, agar hasil pencarian benar-benar mencerminkan apa yang paling saya pedulikan.
-
-*Acceptance Criteria:*
-- Diberikan daftar kriteria sort yang tersedia, ketika pengguna memilih beberapa kriteria dan mengatur urutannya (mis. drag untuk reorder), maka hasil job board terurut sesuai prioritas berjenjang tersebut.
-- Ketika dua atau lebih lowongan memiliki nilai sama pada kriteria prioritas pertama, maka pengurutan mengacu ke kriteria prioritas kedua, dan seterusnya.
-
-**User Story US-5.3**
-> Sebagai pencari kerja, saya ingin menyimpan lowongan yang menarik untuk saya lamar nanti, agar saya tidak kehilangan jejak lowongan yang sudah saya lihat.
-
-*Acceptance Criteria:*
-- Diberikan lowongan pada job board, ketika kandidat menekan tombol simpan, maka lowongan tersebut muncul di daftar "Lowongan Tersimpan" pada akun kandidat.
+**FR-5.1** Halaman Job Board publik menampilkan seluruh lowongan berstatus *Published* lintas seluruh perusahaan terdaftar.  
+**FR-5.2** Pencarian teks responsif mencocokkan kata kunci pada judul posisi, nama perusahaan, deskripsi, atau keahlian (skills).  
+**FR-5.3** Filter multi-kategori dengan logika seleksi:
+- Logika **OR** di dalam kategori yang sama (contoh: Full-time ATAU Kontrak).
+- Logika **AND** antar kategori yang berbeda (contoh: Jakarta DAN Remote).  
+**FR-5.4 (Sistem Sort Berprioritas Berjenjang):**  
+Pengguna dapat memilih lebih dari satu kriteria pengurutan dan menentukan urutan prioritasnya (drag-reorder):
+- *Paling Relevan* (skor pencocokan teks)
+- *Terbaru* (tanggal publish)
+- *Gaji Tertinggi*
+- *Batas Waktu Terdekat* (deadline terdekat)
+- *Kuota Terbanyak*  
+**FR-5.5 (Deterministic Tie-Breaker):**  
+Sistem mengurutkan hasil berdasarkan kriteria prioritas ke-1. Jika terdapat nilai yang sama (*tie*), sistem melanjutkan evaluasi ke prioritas ke-2, ke-3, dst. **Jika seluruh kriteria prioritas menghasilkan nilai seri, sistem secara deterministik menggunakan `published_at DESC` lalu `id ASC` sebagai fallback urutan terakhir.**  
+**FR-5.6** Pengaturan filter dan sort wajib diserialisasi ke dalam query parameter URL (contoh: `?employment_type=full_time&sort=relevansi,terbaru`) agar halaman dapat dibagikan langsung.  
+**FR-5.7** Kandidat yang sudah login dapat menyimpan (*bookmark*) lowongan untuk diakses kembali nanti dari portal kandidat.
 
 ---
 
-### 2.6 Modul: Candidate Profile & Application
+### 2.6 Modul: Candidate Profile, Application, & Snapshot Integrity
 
-Profil dan form lamaran kandidat dirancang selengkap mungkin agar kandidat tidak perlu mengirimkan berkas/informasi tambahan melalui kanal lain (email, WhatsApp, dsb.), dan agar HR memiliki seluruh data yang dibutuhkan untuk menyeleksi tanpa perlu follow-up manual.
+**FR-6.1** Profil kandidat mencakup:
+- Data Pribadi: Nama lengkap, email, nomor telepon/WhatsApp, domisili/lokasi kota, tanggal lahir (opsional), foto profil.
+- Ringkasan profesional / bio.
+- Riwayat Pengalaman Kerja (multi-entri: nama perusahaan, posisi, tanggal mulai/selesai, deskripsi, flag masih bekerja di sini).
+- Riwayat Pendidikan (multi-entri: institusi, jenjang, jurusan, tahun kelulusan).
+- Keahlian (*skills tag input*).
+- Sertifikasi & Portofolio Tautan (LinkedIn, GitHub, Website).
+- Koleksi Berkas CV/Resume berlabel (mis. "CV Software Engineer", "CV Project Manager").
+- Ekspektasi gaji & ketersediaan mulai bekerja (*notice period*).
 
-**FR-6.1** Kandidat dapat membuat profil (tersimpan untuk digunakan kembali pada lamaran berikutnya) yang mencakup:
-- **Data Pribadi**: nama lengkap, email, no. telepon, domisili/lokasi, foto profil (opsional), tanggal lahir (opsional)
-- **Ringkasan Profesional**: deskripsi singkat tentang diri (about me)
-- **Pengalaman Kerja**: nama perusahaan, posisi, periode kerja, deskripsi tanggung jawab (dapat menambahkan lebih dari satu entri, termasuk "belum berpengalaman" untuk fresh graduate)
-- **Riwayat Pendidikan**: institusi, jenjang, jurusan, tahun mulai/selesai (dapat lebih dari satu entri)
-- **Keahlian (Skills)**: daftar skill dalam bentuk tag
-- **Sertifikasi**: nama sertifikat, penerbit, tahun (opsional, dapat lebih dari satu)
-- **Tautan Pendukung**: LinkedIn, portofolio online, GitHub, website pribadi (opsional, dapat lebih dari satu)
-- **Dokumen**: unggah CV/resume (wajib), unggah dokumen pendukung lain seperti transkrip nilai, sertifikat, contoh karya (opsional, dapat lebih dari satu file)
-- **Preferensi**: ekspektasi gaji (opsional), ketersediaan mulai bekerja/notice period
+**FR-6.2 (Aturan Formulir Aplikasi 5-Step):**  
+Pelamaran dilakukan melalui alur multi-step terstruktur:
+1. *Step 1*: Konfirmasi/Review data profil dasar.
+2. *Step 2*: Pemilihan berkas CV (bisa memilih dari koleksi profil ATAU upload dokumen baru khusus lamaran ini).
+3. *Step 3*: Surat lamaran (*cover letter*, opsional) dan pengisian jawaban pertanyaan seleksi kustom dari HR.
+4. *Step 4*: Pemilihan sumber informasi lowongan (*source*, opsional untuk analitik).
+5. *Step 5*: Review menyeluruh dan pernyataan persetujuan submit.
 
-**FR-6.2** Saat melamar lowongan tertentu, kandidat dapat menyertakan surat lamaran (cover letter — teks bebas, opsional) serta menjawab pertanyaan seleksi tambahan yang ditentukan HR untuk lowongan tersebut (lihat FR-4.1).
-**FR-6.3** Kandidat dapat menggunakan profil yang sudah tersimpan untuk melamar ke lowongan lain tanpa mengisi ulang data dari awal (hanya melengkapi hal spesifik lowongan seperti cover letter/pertanyaan tambahan).
-**FR-6.4** HR/Admin yang melihat profil kandidat mendapatkan seluruh informasi di atas dalam satu tampilan terstruktur (tidak perlu membuka file CV terpisah untuk mengetahui data dasar kandidat).
-**FR-6.5** Kandidat dapat menyimpan **lebih dari satu versi CV/dokumen** pada profilnya, masing-masing dengan label bebas (mis. "CV — Software Engineer", "CV — Digital Marketing"), agar dapat memilih dokumen yang paling relevan untuk tiap lowongan.
-**FR-6.6** Saat melamar, kandidat dapat memilih salah satu dokumen dari koleksi yang tersimpan di profil, **atau** mengunggah dokumen baru yang berlaku **khusus untuk lamaran tersebut saja** (tidak menggantikan/mengubah dokumen utama di profil).
-**FR-6.7** Setiap lamaran menyimpan referensi dokumen yang benar-benar digunakan pada lamaran itu (snapshot), sehingga perubahan dokumen di profil di kemudian hari tidak mengubah dokumen yang sudah tercatat pada lamaran lama.
-**FR-6.8** Saat melamar, kandidat dapat secara **opsional** memilih "Dari mana kamu tahu lowongan ini?" (mis. Pencarian di RecruitFlow, Referral Karyawan, Media Sosial, Website Perusahaan, Lainnya) — data ini digunakan untuk analitik sumber kandidat (lihat FR-14.4).
-**FR-6.9** Sistem **mencegah kandidat mengirim lebih dari satu lamaran aktif** untuk lowongan yang sama; jika kandidat sudah pernah melamar, sistem menampilkan status lamaran yang sudah ada alih-alih formulir aplikasi baru.
-**FR-6.10** Kandidat dapat **menarik (withdraw)** lamaran yang masih aktif (belum berstatus Hired/Rejected) kapan saja melalui Candidate Tracking Portal. Status lamaran berubah menjadi **Withdrawn**, tercatat pada activity log, dan tetap tersimpan sebagai data historis (tidak dihapus) untuk keperluan pipeline & analitik HR.
-
-**User Story US-6.1**
-> Sebagai kandidat, saya ingin mengisi profil saya secara lengkap satu kali, agar saya bisa melamar ke berbagai lowongan tanpa perlu mengulang proses input data maupun mengirim dokumen tambahan lewat kanal lain.
-
-*Acceptance Criteria:*
-- Diberikan profil kandidat yang sudah lengkap (data pribadi, pengalaman, pendidikan, skill, CV), ketika kandidat melamar lowongan baru, maka data tersebut otomatis terpakai dan kandidat hanya perlu mengisi hal yang spesifik terhadap lowongan itu.
-
-**User Story US-6.2**
-> Sebagai HR, saya ingin melihat seluruh informasi relevan kandidat dalam satu halaman terstruktur, agar saya bisa menyeleksi kandidat tanpa perlu meminta data tambahan melalui email atau WhatsApp.
-
-*Acceptance Criteria:*
-- Diberikan profil kandidat yang melamar, ketika HR membuka detail kandidat, maka seluruh data (pengalaman, pendidikan, skill, dokumen, jawaban pertanyaan seleksi) tampil lengkap dan terstruktur.
-
-**User Story US-6.3**
-> Sebagai kandidat, saya ingin menggunakan CV yang berbeda untuk lowongan/bidang yang berbeda, agar lamaran saya lebih relevan dengan posisi yang saya tuju tanpa harus mengganti CV utama di profil saya.
-
-*Acceptance Criteria:*
-- Diberikan koleksi CV pada profil kandidat, ketika kandidat melamar sebuah lowongan, maka kandidat dapat memilih salah satu CV dari koleksi atau mengunggah CV baru khusus lamaran ini.
-
-**User Story US-6.4**
-> Sebagai kandidat, saya ingin membatalkan lamaran yang sudah saya kirim jika saya berubah pikiran, agar status saya di sistem HR perusahaan tetap akurat dan tidak menggantung.
-
-*Acceptance Criteria:*
-- Diberikan lamaran aktif milik kandidat, ketika kandidat menekan "Tarik Lamaran", maka status berubah menjadi "Withdrawn", HR melihat perubahan ini di pipeline mereka, dan kandidat tidak dapat mengubahnya kembali menjadi aktif (harus melamar ulang jika berubah pikiran lagi, mengikuti aturan FR-6.9).
+**FR-6.3 (Integritas Snapshot Dokumen Lamaran):**  
+Setiap lamaran yang berhasil dikirim **wajib menyimpan salinan referensi dokumen (snapshot) yang digunakan pada saat itu**. Jika di masa depan kandidat memperbarui profilnya atau menghapus berkas CV dari menu "Dokumen Saya", berkas CV yang sudah tersimpan pada lamaran lama **TIDAK BOLEH berubah, hilang, atau terhapus dari sisi HR**.  
+**FR-6.4 (Aturan Pencegahan Lamaran Ganda vs Re-Apply):**  
+- Sistem **mencegah** pengiriman lamaran ganda jika kandidat telah memiliki lamaran berstatus **`active`** pada lowongan yang sama.
+- Kandidat **diizinkan melamar kembali (re-apply)** pada lowongan yang sama HANYA JIKA lamaran sebelumnya telah berstatus final (**`rejected`** atau **`withdrawn`**), dan lowongan tersebut saat ini masih berstatus *Published*.  
+**FR-6.5 (Aturan Penarikan Lamaran / Withdraw):**  
+- Kandidat berhak menarik (*withdraw*) lamarannya kapan saja selama status lamaran masih **`active`**.
+- Status lamaran berubah menjadi **`withdrawn`**, tercatat otomatis di `activity_logs`.
+- Status `withdrawn` bersifat permanen dari sisi interaksi HR (HR tidak dapat membatalkan keputusan kandidat yang menarik diri).
 
 ---
 
-### 2.7 Modul: Candidate Management (HR View)
+### 2.7 Modul: Candidate Management (HR View) & Isolasi Tagging
 
-**FR-7.1** HR/Admin dapat mencari & memfilter kandidat berdasarkan nama, lowongan yang dilamar, status pipeline, skill, atau tag.
-**FR-7.2** HR/Admin dapat menambahkan tag kustom pada kandidat (mis. "Top Talent", "Blacklist", "Referral").
-**FR-7.3** HR/Admin dapat melihat riwayat seluruh lamaran seorang kandidat **hanya untuk lamaran yang ditujukan ke perusahaan mereka sendiri** — riwayat lamaran kandidat ke perusahaan lain di platform tidak dapat diakses (lihat NFR Isolasi Data Kandidat pada bagian 3).
-
-**User Story US-7.1**
-> Sebagai HR, saya ingin mencari kandidat berdasarkan nama, skill, atau tag, agar saya cepat menemukan profil yang saya butuhkan.
-
-*Acceptance Criteria:*
-- Diberikan kata kunci pencarian, ketika dimasukkan, maka daftar kandidat terfilter sesuai kecocokan nama/skill/tag secara real-time.
+**FR-7.1** HR/Admin dapat melihat daftar seluruh pelamar yang pernah melamar ke perusahaannya, dilengkapi filter posisi lowongan, status pipeline, keahlian, dan tanggal melamar.  
+**FR-7.2 (Isolasi Tagging Kandidat Multi-Tenant):**  
+HR/Admin dapat membuat dan menyematkan tag kustom pada pelamar (contoh: "Top Talent", "Fast Learner", "Blacklist").  
+*Aturan Isolasi:* Tag kandidat bersifat **spesifik per perusahaan (`company_scoped`)**. Perusahaan A **TIDAK DAPAT** melihat tag yang disematkan oleh Perusahaan B pada kandidat yang sama.  
+**FR-7.3** HR/Admin hanya dapat melihat riwayat lamaran kandidat yang ditujukan ke **perusahaannya sendiri**. Riwayat pelamaran kandidat ke perusahaan lain di platform RecruitFlow terisolasi mutlak dan dilarang terekspos.
 
 ---
 
-### 2.8 Modul: Pipeline (Seleksi Kandidat)
+### 2.8 Modul: Pipeline Kanban & Aturan State Machine
 
-**FR-8.1** Sistem menyediakan template pipeline default: **Applied → Screening → Interview → Offer → Hired**, sebagai titik awal saat membuat lowongan baru.
-**FR-8.2** HR dapat **mengustomisasi tahapan pipeline per lowongan** — menambah, menghapus, mengganti nama, atau mengubah urutan tahap tengah (mis. menambahkan "Technical Test", memecah "Interview" menjadi "HR Interview" dan "User Interview"), sesuai kebutuhan proses seleksi masing-masing lowongan.
-**FR-8.3** Tiga status bersifat **tetap (anchor)** dan tidak dapat dihapus/diganti nama oleh HR karena menjadi acuan sistem di seluruh modul (analytics, tracking portal, dsb.): **Applied** (tahap awal, otomatis saat kandidat melamar), **Hired** (status akhir positif), **Rejected** dan **Withdrawn** (status akhir negatif — masing-masing dipicu oleh aksi berbeda, lihat Modul 2.10).
-**FR-8.4** Tampilan pipeline berbentuk kanban board, dengan kandidat sebagai kartu yang dapat dipindahkan antar kolom (drag-and-drop) sesuai tahap kustom yang berlaku untuk lowongan tersebut.
-**FR-8.5** Perpindahan tahap kandidat tercatat dalam activity log.
-**FR-8.6** Perubahan konfigurasi pipeline (tambah/hapus/ubah tahap) hanya memengaruhi lowongan tersebut, tidak memengaruhi lowongan lain yang sudah ada.
-
-**User Story US-8.1**
-> Sebagai HR, saya ingin memindahkan kandidat dari satu tahap seleksi ke tahap berikutnya secara visual, agar saya bisa dengan mudah memantau progres seluruh kandidat dalam satu lowongan.
-
-*Acceptance Criteria:*
-- Diberikan kandidat pada kolom "Screening", ketika HR drag kartu ke kolom "Interview", maka status kandidat berubah dan tersimpan otomatis.
-- Perubahan status memicu pencatatan pada activity log kandidat tersebut.
-
-**User Story US-8.2**
-> Sebagai HR, saya ingin menyesuaikan tahapan seleksi untuk lowongan tertentu yang butuh proses lebih panjang (mis. ada tes teknis), agar pipeline benar-benar merepresentasikan proses rekrutmen saya yang sebenarnya.
-
-*Acceptance Criteria:*
-- Diberikan pipeline default saat membuat lowongan, ketika HR menambahkan tahap baru di antara "Screening" dan "Offer", maka tahap tersebut tersimpan dan tampil sebagai kolom tambahan pada kanban board lowongan itu saja.
+**FR-8.1** Setiap lowongan memiliki papan Kanban pipeline dengan 4 tahapan jangkar (*anchor stages*) yang tidak dapat dihapus atau diganti nama:
+1. **Applied** (Kolom awal, otomatis saat kandidat melamar).
+2. **Hired** (Kolom akhir positif).
+3. **Rejected** (Kolom akhir negatif dari sisi perusahaan).
+4. **Withdrawn** (Kolom akhir dari sisi inisiatif kandidat).  
+**FR-8.2** HR dapat mengustomisasi tahapan tengah di antara *Applied* dan *Hired* (contoh: menambah *Screening*, *Technical Test*, *HR Interview*, *User Interview*, *Offering*), serta mengubah urutan posisinya.  
+**FR-8.3 (Aturan Transisi Status State Machine):**  
+1. *From Active to Terminal*: Kartu pelamar dari tahap aktif manapun dapat dipindahkan ke *Hired* atau *Rejected*.
+2. *Withdrawn Lock*: Kartu pelamar yang berstatus *Withdrawn* **terkunci permanen**. HR dilarang memindahkan kartu yang berstatus Withdrawn kembali ke kolom aktif.
+3. *Re-Evaluation from Rejected*: Jika HR melakukan kesalahan klik, kartu dari kolom *Rejected* diizinkan untuk dipindahkan kembali ke tahap aktif, dengan kewajiban mencatat alasan pada `activity_logs`.  
+**FR-8.4** Kolom *Rejected* dan *Withdrawn* ditampilkan terpisah (dapat di-collapse) di sisi kanan papan Kanban agar tidak mengganggu visibilitas alur aktif.  
+**FR-8.5** Setiap perpindahan kartu antar tahap memicu pencatatan audit trail otomatis di `activity_logs`.
 
 ---
 
-### 2.9 Modul: Interview & Schedule
+### 2.9 Modul: Penjadwalan Interview & Standarisasi Waktu
 
-**FR-9.1** HR/Admin dapat menjadwalkan interview untuk kandidat: tanggal, waktu, jenis (online/offline), pewawancara (nama, dapat lebih dari satu), catatan.
-**FR-9.2** Jadwal interview tampil pada tampilan kalender (mingguan/bulanan) di dalam sistem.
-**FR-9.3** Begitu jadwal interview disimpan, status lamaran kandidat pada Candidate Tracking Portal otomatis diperbarui beserta detail jadwalnya — ini menjadi **sumber informasi utama** bagi kandidat, bukan email (lihat prinsip notifikasi pada bagian 3A).
-**FR-9.4** HR/Admin dapat **mengubah jadwal (reschedule)** atau **membatalkan** interview yang sudah dibuat. Perubahan ini langsung tercermin di Candidate Tracking Portal kandidat secara real-time.
-
-**User Story US-9.1**
-> Sebagai HR, saya ingin menjadwalkan interview untuk kandidat dan melihatnya dalam tampilan kalender, agar saya tidak bentrok jadwal dengan interview lain.
-
-*Acceptance Criteria:*
-- Diberikan detail jadwal valid, ketika disimpan, maka jadwal muncul di kalender internal HR dan status + detail jadwal tersebut langsung terlihat oleh kandidat di Candidate Tracking Portal miliknya.
-
-**User Story US-9.2**
-> Sebagai HR, saya ingin mengubah jadwal interview yang berbenturan, agar kandidat mendapat informasi jadwal terbaru tanpa saya perlu menghubunginya secara terpisah.
-
-*Acceptance Criteria:*
-- Diberikan jadwal interview yang sudah ada, ketika HR mengubah tanggal/waktu, maka Candidate Tracking Portal kandidat menampilkan jadwal terbaru secara otomatis.
+**FR-9.1** HR/Admin dapat membuat jadwal interview untuk kandidat di tahap aktif:
+- Judul interview (contoh: "Wawancara Teknis Tahap 1")
+- Waktu pelaksanaan: Tanggal dan Jam tersimpan dalam format **ISO 8601 UTC**, dan ditampilkan di antarmuka sesuai zona waktu lokal pengguna (WIB, WITA, WIT)
+- Durasi wawancara (menit, default 60 menit)
+- Metode pelaksanaan: *Online* (disertai link Google Meet/Zoom) atau *Offline* (disertai alamat lokasi dan ruangan)
+- Nama pewawancara internal
+- Catatan persiapan untuk kandidat  
+**FR-9.2** Jadwal wawancara otomatis muncul pada **Kalender Interview** HR dalam mode tampilan **Grid Bulanan (Month View)** dan **Agenda Mingguan (Week View)**.  
+**FR-9.3** Begitu interview dijadwalkan, detail waktu dan tautan/lokasi interview **langsung tampil di Candidate Tracking Portal** milik kandidat secara real-time.  
+**FR-9.4** HR dapat mengubah jadwal (*reschedule*) atau membatalkan interview. Tanggal jadwal baru tidak boleh diatur di masa lalu (*past date validation*). Perubahan langsung diperbarui di portal kandidat dan dicatat di `activity_logs`.
 
 ---
 
-### 2.10 Modul: Decision — Offer, Reject & Withdrawn
+### 2.10 Modul: Keputusan Akhir (Decision) & Decoupled Email Dispatch
 
-Ini adalah satu-satunya dua titik dalam alur rekrutmen di mana pengiriman email bersifat relevan — digunakan untuk formalitas hasil akhir, bukan untuk update status rutin (lihat prinsip notifikasi pada bagian 3A).
-
-**FR-10.1** Status kandidat dapat diubah menjadi **Hired** atau **Rejected** langsung dari pipeline oleh HR/Admin — perubahan ini segera tercermin di Candidate Tracking Portal terlepas dari apakah email dikirim atau tidak.
-**FR-10.2** Status **Withdrawn** hanya dapat dipicu oleh aksi kandidat sendiri (lihat FR-6.10), bukan oleh HR — jika HR ingin "menolak" kandidat yang sebenarnya sudah tidak berminat, HR tetap menggunakan status Rejected atau mengonfirmasi kandidat menarik lamarannya sendiri melalui portal.
-**FR-10.3** HR/Admin dapat **secara opsional** mengirimkan surat offer resmi berbasis template (dengan variabel otomatis: nama kandidat, posisi, dsb.) saat kandidat berstatus Hired, untuk kebutuhan surat-menyurat formal.
-**FR-10.4** HR/Admin dapat **secara opsional** mengirimkan email penolakan berbasis template saat kandidat berstatus Rejected, untuk kebutuhan formalitas.
-**FR-10.5** Status akhir kandidat (Hired/Rejected/Withdrawn) tercatat permanen dan terlihat di riwayat pipeline, terlepas dari status pengiriman email. Saat kandidat Hired, kuota posisi terisi otomatis bertambah (lihat FR-4.4).
-**FR-10.6** Sistem mencatat status pengiriman email formal secara terpisah (mis. "Belum Dikirim" / "Terkirim") pada profil kandidat, sehingga HR tahu mana yang masih perlu ditindaklanjuti secara resmi.
-
-**User Story US-10.1**
-> Sebagai HR, saya ingin mengirimkan surat penawaran kerja resmi dari sistem menggunakan template ketika kandidat sudah saya tandai diterima, agar ada dokumentasi formal tanpa harus menulis ulang setiap kali.
-
-*Acceptance Criteria:*
-- Diberikan kandidat yang statusnya diubah menjadi Hired, ketika HR memilih untuk mengirim surat offer, maka email terkirim ke kandidat dan tercatat sebagai "Surat Offer Terkirim".
-- Diberikan kandidat berstatus Hired namun HR belum mengirim surat offer, status di Candidate Tracking Portal kandidat tetap menampilkan "Diterima" secara real-time.
+**FR-10.1** HR/Admin menetapkan keputusan akhir lamaran melalui modal konfirmasi keputusan:
+- Menjadi **Hired**: Memperbarui status lamaran, menambah kuota `filled_count`, dan memicu auto-close jika kuota terpenuhi (FR-4.3).
+- Menjadi **Rejected**: Memperbarui status lamaran dan memindahkan kartu ke kolom penolakan.  
+**FR-10.2 (Arsitektur Pengiriman Email Terpisah / Decoupled):**  
+Saat mengambil keputusan Hired atau Rejected, HR dapat memilih opsi toggle: *"Kirim surat resmi via email?"*.  
+*Aturan ketahanan sistem:*
+1. Transaksi perubahan status lamaran di database **wajib berhasil terlebih dahulu**.
+2. Pengiriman email melalui layanan pihak ketiga dijalankan secara asinkron/terpisah.
+3. Jika pengiriman email gagal (misal koneksi timeout atau email provider error), **status lamaran kandidat TIDAK BOLEH di-rollback**. Sistem mencatat status pengiriman sebagai `failed` di `email_send_log` dan menampilkan tombol *"Kirim Ulang Email"* di antarmuka HR.
 
 ---
 
-### 2.11 Modul: Email Template
+### 2.11 Modul: Email Templates & Variabel Dinamis
 
-Karena email hanya digunakan untuk formalitas hasil akhir (lihat bagian 3A), modul ini hanya mencakup dua jenis template utama.
-
-**FR-11.1** Sistem menyediakan template default untuk: **surat offer/diterima** dan **surat penolakan** — dapat disunting oleh Admin/HR agar sesuai gaya bahasa perusahaan.
-**FR-11.2** Template mendukung variabel dinamis (mis. `{{candidate_name}}`, `{{job_title}}`, `{{company_name}}`).
-**FR-11.3** Sistem tidak mengirimkan email otomatis untuk perubahan tahap pipeline lainnya maupun notifikasi internal ke HR/Admin — seluruh update tersebut cukup tercermin di dalam sistem.
-
----
-
-### 2.12 Modul: Notes & Candidate Scoring
-
-**FR-12.1** HR/Admin dapat menambahkan catatan (notes) bebas pada profil kandidat, terlihat oleh seluruh anggota workspace.
-**FR-12.2** HR/Admin dapat memberikan skor/rating (1–5) setelah interview, sebagai bagian dari evaluasi kandidat.
-**FR-12.3** Jika lebih dari satu anggota HR memberikan skor pada kandidat yang sama, sistem menampilkan **seluruh skor individual** (lengkap dengan nama pemberi & waktu), **serta** rata-rata otomatis sebagai ringkasan cepat.
-
-**User Story US-12.1**
-> Sebagai HR, saya ingin mencatat hasil evaluasi interview pada profil kandidat, agar tim dapat membuat keputusan bersama berdasarkan catatan tersebut.
-
-*Acceptance Criteria:*
-- Diberikan form catatan pada profil kandidat, ketika disimpan, maka catatan tampil dengan nama penulis dan waktu penulisan.
-
-**User Story US-12.2**
-> Sebagai Admin, saya ingin melihat rata-rata skor kandidat dari seluruh pewawancara sekaligus rincian tiap skor, agar saya bisa cepat menilai konsensus tim tanpa kehilangan detail penilaian masing-masing.
-
-*Acceptance Criteria:*
-- Diberikan kandidat yang dinilai oleh 3 anggota HR berbeda, ketika profil kandidat dibuka, maka sistem menampilkan rata-rata skor beserta daftar skor individual masing-masing penilai.
+**FR-11.1** Sistem menyediakan dua template bawaan yang dapat disunting oleh HR per perusahaan:
+1. *Template Surat Penawaran Kerja (Offer Letter)*.
+2. *Template Surat Penolakan Resmi (Rejection Letter)*.  
+**FR-11.2** Template mendukung penggantian otomatis variabel dinamis resmi:
+- `{{candidate_name}}`: Nama lengkap pelamar
+- `{{job_title}}`: Posisi lowongan yang dilamar
+- `{{company_name}}`: Nama resmi perusahaan
+- `{{date}}`: Tanggal penetapan surat keputusan  
+**FR-11.3** Sesuai Prinsip Notifikasi PRD Bagian 3A, sistem **tidak menyediakan dan tidak mengirimkan email otomatis untuk perubahan tahap harian** (seperti pemindahan ke Screening atau penjadwalan interview) — seluruh alur tersebut mengandalkan visibilitas in-app portal.
 
 ---
 
-### 2.13 Modul: Candidate Tracking Portal (Publik/Akun Kandidat)
+### 2.12 Modul: Catatan Internal (Notes) & Skor Evaluasi
 
-**FR-13.1** Kandidat dapat mengecek status lamaran mereka melalui akun kandidat (lihat Modul 2.2), tanpa perlu kanal komunikasi tambahan.
-**FR-13.2** Status yang ditampilkan ke kandidat disederhanakan (mis. "Dalam Peninjauan", "Interview Dijadwalkan", "Diterima", "Tidak Lolos", "Ditarik") — tanpa menampilkan detail internal (catatan HR, skor, dsb).
-**FR-13.3** Kandidat dapat melihat riwayat seluruh lamaran yang pernah diajukan (ke perusahaan manapun di platform) dalam satu dashboard.
-**FR-13.4** Kandidat dapat melihat daftar **lowongan tersimpan (bookmark)** miliknya, dan melamar langsung dari daftar tersebut.
-**FR-13.5** Kandidat dapat menarik (withdraw) lamaran aktif langsung dari halaman ini (lihat FR-6.10).
-
-**User Story US-13.1**
-> Sebagai kandidat, saya ingin mengecek status seluruh lamaran saya di satu tempat, agar saya tidak perlu terus-menerus menghubungi HR untuk update.
-
-*Acceptance Criteria:*
-- Diberikan akun kandidat dengan beberapa lamaran aktif, ketika dashboard dibuka, maka seluruh status lamaran (lintas perusahaan) tampil dengan jelas.
+**FR-12.1** Tim HR/Admin dapat menambahkan catatan internal bebas pada profil pelamar.  
+*Hak Akses Catatan:* Catatan bersifat audit trail. Anggota HR hanya dapat menyunting atau menghapus catatan yang ditulisnya sendiri. Admin memiliki hak moderasi untuk menghapus catatan anggota lain bila diperlukan.  
+**FR-12.2** Setiap pewawancara/anggota tim dapat memberikan skor evaluasi mandiri dalam skala integer **1 hingga 5 bintang**.  
+**FR-12.3** Sistem menampilkan rincian seluruh skor individual dari masing-masing penilai (disertai nama penilai dan waktu penilaian), serta menampilkan **nilai rata-rata tertimbang (*average score*)** secara otomatis sebagai ringkasan konsensus tim.
 
 ---
 
-### 2.14 Modul: Analytics Dashboard
+### 2.13 Modul: Candidate Tracking Portal (Sumber Kebenaran Pelamar)
 
-**FR-14.1** Dashboard menampilkan ringkasan: jumlah lowongan aktif, jumlah kandidat per tahap pipeline, rata-rata time-to-hire.
-**FR-14.2** Dashboard menampilkan funnel conversion rate antar tahap pipeline (menyesuaikan tahap kustom masing-masing lowongan jika dilihat per lowongan; menggunakan tahap standar Applied/Interview/Offer/Hired/Rejected/Withdrawn jika dilihat agregat lintas lowongan).
-**FR-14.3** Data dashboard difilter berdasarkan rentang waktu dan/atau lowongan tertentu.
-**FR-14.4** Dashboard menampilkan distribusi **sumber kandidat** (berdasarkan data opsional pada FR-6.8) untuk lowongan/perusahaan tertentu.
-**FR-14.5** Dashboard membedakan status **Rejected** (ditolak perusahaan) dan **Withdrawn** (kandidat mengundurkan diri) sebagai metrik terpisah, agar funnel drop-off dapat dianalisis lebih akurat.
-
-**User Story US-14.1**
-> Sebagai Admin, saya ingin melihat funnel rekrutmen dalam bentuk visual, agar saya bisa mengidentifikasi tahap mana yang paling banyak kehilangan kandidat.
-
-*Acceptance Criteria:*
-- Diberikan data pipeline yang ada, ketika dashboard dibuka, maka funnel chart menampilkan jumlah kandidat di setiap tahap secara akurat sesuai data terkini, dengan Rejected dan Withdrawn ditampilkan sebagai kategori terpisah.
-
----
-
-### 2.15 Modul: Activity Log
-
-**FR-15.1** Setiap perubahan penting (perpindahan tahap, pengiriman email, penambahan catatan, withdraw, reschedule interview) tercatat dengan informasi: aktor, waktu, jenis aksi.
-**FR-15.2** Activity log ditampilkan secara kronologis pada profil kandidat.
+**FR-13.1** Portal kandidat (`/candidate/dashboard`) adalah sumber kebenaran utama (*single source of truth*) bagi pelamar untuk memantau status seluruh lamarannya lintas perusahaan.  
+**FR-13.2 (Label Status Publik yang Disederhanakan):**  
+Untuk melindungi kerahasiaan evaluasi internal tim HR, kandidat **dilarang melihat catatan internal, skor penilaian, atau nama kolom kustom internal**. Status yang ditampilkan ke kandidat disederhanakan menjadi:
+- *"Lamaran Terkirim"* (saat berada di tahap Applied)
+- *"Dalam Proses Seleksi"* (saat berada di tahap tengah seperti Screening/Test)
+- *"Interview Dijadwalkan"* (saat jadwal interview aktif)
+- *"Diterima / Penawaran"* (saat status Hired)
+- *"Tidak Lolos Seleksi"* (saat status Rejected)
+- *"Lamaran Ditarik"* (saat status Withdrawn)  
+**FR-13.3** Kandidat dapat melihat arsip dokumen snapshot yang digunakannya saat melamar, serta dapat mengakses lowongan yang telah dibookmark.
 
 ---
 
-## 3A. Prinsip Notifikasi & Peran Email
+### 2.14 Modul: Dashboard Analitik Rekrutmen
 
-Untuk menghindari kesalahpahaman lintas dokumen, berikut prinsip yang berlaku di seluruh sistem:
+**FR-14.1** Dashboard menampilkan metrik ringkasan: jumlah lowongan aktif, jumlah pelamar baru minggu ini, dan jadwal interview aktif.  
+**FR-14.2 (Rumus Baku Perhitungan Time-to-Hire):**  
+Metrik Rata-rata *Time-to-Hire* (TTH) dihitung secara matematis menggunakan formula:
+$$\text{TTH per Pelamar} = \text{Tanggal Keputusan Hired} - \text{Tanggal Lamaran Masuk (Applied At)}$$
+Nilai rata-rata disajikan dalam satuan **hari kalender**, dapat difilter per rentang tanggal atau per lowongan kerja tertentu.  
+**FR-14.3** Dashboard menampilkan grafik visual *Funnel Conversion Rate* antar tahapan seleksi.  
+**FR-14.4** Dashboard memisahkan angka pelamar yang gugur karena **Ditolak Perusahaan (Rejected)** dan pelamar yang mengundurkan diri atas inisiatif sendiri **(Withdrawn)** sebagai dua metrik drop-off terpisah, agar evaluasi efektivitas funnel akurat.  
+**FR-14.5** Dashboard menyajikan grafik distribusi sumber pelamar (*Candidate Source*) berdasarkan data pengisian di form aplikasi (FR-6.8).
 
-1. **Sistem (in-app) adalah sumber kebenaran utama** untuk status lamaran, di setiap tahap (termasuk tahap kustom): Applied, tahap-tahap tengah (Screening, Interview, dsb.), hingga Hired/Rejected/Withdrawn. Seluruh perubahan tahap ini **wajib** langsung terlihat oleh kandidat melalui Candidate Tracking Portal secara real-time.
-2. **Email bersifat opsional dan hanya digunakan untuk formalitas hasil akhir** — yaitu saat kandidat dinyatakan **Diterima** atau **Ditolak** (FR-10.3, FR-10.4). Tujuannya adalah menghasilkan dokumen/surat resmi yang lazim dibutuhkan secara administratif, bukan sebagai mekanisme notifikasi utama.
-3. **Tidak ada email yang dikirim ke pihak HR/Admin/recruiter** untuk aktivitas rutin (kandidat baru melamar, kandidat pindah tahap, dsb.) — seluruhnya disampaikan melalui notifikasi in-app/dashboard.
-4. **Pengecualian**: email untuk keperluan keamanan akun (reset password kandidat maupun HR, FR-2.3) tetap dikirim karena sifatnya berbeda dari notifikasi status lamaran.
-5. Tahap-tahap selain Diterima/Ditolak (Screening, Interview dijadwalkan, dsb.) **tidak memicu pengiriman email otomatis** — cukup tercermin di status Candidate Tracking Portal.
+---
+
+### 2.15 Modul: Activity Log (Audit Trail)
+
+**FR-15.1** Setiap peristiwa signifikan pada siklus lamaran wajib dicatat secara otomatis ke dalam `activity_logs`:
+- Pengiriman lamaran pertama kali
+- Perpindahan tahap seleksi (kolom asal → kolom tujuan)
+- Penjadwalan, perubahan jadwal (*reschedule*), atau pembatalan interview
+- Penambahan catatan internal atau skor evaluasi
+- Pengambilan keputusan akhir (Hired / Rejected)
+- Pengiriman surat penawaran atau surat penolakan via email
+- Penarikan lamaran oleh kandidat (*Withdraw*)  
+**FR-15.2** Setiap baris log bersifat permanen (*immutable*, tidak dapat disunting atau dihapus oleh siapapun) memuat: `application_id`, `actor_type` (`candidate`, `company_member`, `system`), `actor_id`, `action_type`, `description`, dan `timestamp`.  
+**FR-15.3** Riwayat aktivitas disajikan secara kronologis menurun pada halaman detail pelamar sisi HR.
+
+---
+
+## 3A. Prinsip Notifikasi & Batasan Peran Email
+
+1. **Sistem In-App Adalah Sumber Kebenaran Utama**: Pembaruan status lamaran wajib tercermin seketika (*real-time*) di Candidate Tracking Portal.
+2. **Email Hanya untuk Formalitas Hasil Akhir & Keamanan Akun**:
+   - Hasil akhir: Surat Penawaran (*Offer*) dan Surat Penolakan (*Reject*) formal.
+   - Keamanan: Tautan Lupa/Reset Password.
+3. **Tanpa Email Rutin ke HR Maupun Kandidat**: Sistem tidak mengirim email untuk aktivitas harian seperti "Ada pelamar baru", "Kandidat dipindahkan ke Screening", atau "Interview dijadwalkan". Seluruh aktivitas tersebut dipantau langsung melalui dashboard dan kalender in-app.
 
 ---
 
 ## 3. Non-Functional Requirements (NFR)
 
-| Kategori | Requirement |
+| Kategori | Spesifikasi Kebutuhan Non-Fungsional |
 |---|---|
-| **Keamanan** | Isolasi data antar tenant harus mutlak. Password disimpan ter-hash. Endpoint publik (job board, tracking, form aplikasi) tidak boleh mengekspos data internal HR (catatan, skor). Form aplikasi publik dilindungi mekanisme anti-spam/rate-limiting untuk mencegah lamaran otomatis/bot. |
-| **Isolasi Data Kandidat** | Karena akun kandidat bersifat global (lintas perusahaan), setiap perusahaan **hanya** dapat melihat data & riwayat lamaran kandidat yang ditujukan ke perusahaan mereka sendiri. Riwayat lamaran kandidat ke perusahaan lain tidak boleh terekspos ke pihak manapun kecuali kandidat itu sendiri. |
-| **Performa** | Waktu muat halaman utama < 2 detik. Filter, search, dan sort berprioritas pada job board harus responsif meski diterapkan bersamaan. |
-| **Skalabilitas** | Arsitektur database harus mendukung penambahan tenant baru tanpa migrasi manual, serta pertumbuhan jumlah lowongan/kandidat pada job board publik. |
-| **Usability** | Antarmuka HR harus dapat digunakan tanpa training. Mekanisme pengaturan prioritas sort pada job board dan kustomisasi tahap pipeline harus intuitif bagi pengguna awam. |
-| **Ketersediaan** | Sistem menargetkan uptime tinggi untuk kebutuhan operasional harian HR maupun akses publik job board. |
-| **Kompatibilitas** | Aplikasi harus responsif di desktop maupun tablet untuk sisi HR; job board & form aplikasi harus responsif penuh di mobile. |
-| **Auditabilitas** | Seluruh aksi penting harus tercatat di activity log dan tidak dapat dihapus oleh pengguna biasa. |
-| **Portabilitas Data** | Struktur data harus memungkinkan ekspor data kandidat (mis. ke CSV) untuk kebutuhan pelaporan. |
-| **Kelengkapan Data** | Sistem harus mencegah publish lowongan/profil yang belum memenuhi kelengkapan data minimum. |
-| **Notifikasi** | Update status lamaran ke kandidat wajib real-time di dalam sistem (bukan bergantung email). Notifikasi internal ke HR/Admin disampaikan in-app, bukan email — lihat bagian 3A. |
+| **Isolasi Multi-Tenant Mutlak** | Seluruh data operasional perusahaan (lowongan, lamaran, catatan, skor, template email, tag internal) wajib terisolasi 100% per `company_id`. Perusahaan manapun dilarang keras dapat melihat atau memodifikasi data milik perusahaan lain. |
+| **Isolasi Riwayat Pelamar** | Perusahaan hanya memiliki izin membaca riwayat lamaran kandidat yang ditujukan ke perusahaannya sendiri. Riwayat pelamaran kandidat ke perusahaan lain di platform tidak boleh bocor dalam kondisi apapun. |
+| **Portabilitas Data (Ekspor CSV)** | Sistem menyediakan fitur ekspor data kandidat ke berkas CSV terstruktur dari halaman Database Kandidat (`H-10`), dengan format kolom wajib: *Nama Lengkap, Email, Nomor Telepon, Posisi Lowongan, Tahap Terakhir, Status Lamaran, Tanggal Melamar, Rata-rata Skor Evaluasi*. |
+| **Keamanan Berkas & Storage** | Endpoint upload berkas wajib dilindungi autentikasi JWT pengguna. Server wajib menerapkan validasi whitelist MIME-type (`application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `image/jpeg`, `image/png`, `image/webp`) dan batasan ukuran maksimum 5MB per berkas. Nama berkas dienkripsi dengan UUID unik untuk mencegah eksploitasi path traversal. |
+| **Ketahanan Brute-Force & Anti-Spam** | Sistem menerapkan rate limiting berlapis: Endpoint autentikasi (Login/Register) dibatasi maksimal 10 request/menit/IP; Endpoint lupa password dibatasi maksimal 5 request/15 menit/IP; Endpoint submit lamaran dibatasi maksimal 20 lamaran/jam/IP. |
+| **Performa Waktu Muat** | Waktu muat awal (*initial page load*) halaman Job Board dan Landing Page wajib < 2 detik pada koneksi internet reguler (Lighthouse Performance Score >= 85). |
+| **Responsivitas Perangkat** | Area Publik (Job Board, Job Detail, Form Aplikasi) dan Portal Kandidat wajib responsif penuh di perangkat Mobile (*viewport width* 375px+). Area HR dirancang optimal untuk Desktop & Tablet (*viewport width* 768px+). |
+| **Auditabilitas** | Seluruh aksi krusial tercatat permanen di `activity_logs` tanpa opsi penghapusan oleh pengguna. |
 
 ---
 
-## 4. Batasan & Asumsi
+## 4. Batasan & Asumsi Produk (Scope Guardrails)
 
-- Role pengguna internal dibatasi pada Admin & HR/Recruiter (tidak ada role Hiring Manager/Interviewer terpisah pada versi ini).
-- Interview dilakukan dan dicatat oleh HR/Admin; pewawancara eksternal tidak memiliki akun sistem sendiri (dicatat sebagai data teks).
-- Pengiriman email diasumsikan menggunakan layanan pihak ketiga (akan ditentukan pada System Design).
-- Tidak ada integrasi pembayaran/payroll pada versi ini.
-- Kandidat memiliki akun tersendiri (berbeda dari akun perusahaan) untuk menyimpan profil dan melacak lamaran, berlaku lintas seluruh perusahaan di platform.
-- Relevansi pencarian ("Paling Relevan") menggunakan pencocokan teks pada judul, deskripsi, dan skill lowongan — bukan sistem rekomendasi berbasis riwayat pengguna.
-- Kustomisasi pipeline dibatasi pada tahap tengah; status anchor (Applied, Hired, Rejected, Withdrawn) tetap seragam di seluruh sistem agar analytics tetap dapat dibandingkan lintas lowongan/perusahaan.
-- Tracking sumber kandidat (FR-6.8) bersifat opsional dan self-reported oleh kandidat — bukan tracking teknis (mis. UTM parameter), sehingga akurasinya bergantung pada kejujuran pengisian.
-- **Halaman harga bersifat informasional** untuk kebutuhan pemasaran (menampilkan paket Starter/Growth/Enterprise). Tidak ada mekanisme enforcement teknis (pembatasan jumlah lowongan/anggota tim berdasarkan paket, integrasi payment gateway) pada versi ini — seluruh fitur yang dijabarkan di PRD tersedia penuh untuk workspace manapun, terlepas dari paket yang "dipilih" di halaman harga.
+1. **Role Pengguna Internal**: Dibatasi hanya pada **Admin** dan **HR/Recruiter**. Tidak ada role pewawancara eksternal terpisah pada versi ini.
+2. **Pewawancara Eksternal**: Dicatat sebagai data teks bebas (*free-text input*) pada form interview, bukan sebagai akun login sistem.
+3. **Tanpa Modul Payroll / Pembayaran**: RecruitFlow versi ini murni berfokus pada siklus Applicant Tracking System (ATS), tanpa integrasi penggajian atau sistem pembayaran gaji.
+4. **Halaman Harga Murni Informasional**: Halaman `/harga` menampilkan kartu paket *Starter, Growth, dan Enterprise* murni untuk kebutuhan pemasaran dan konversi B2B. **Tidak ada pembatasan fitur teknis (paywall enforcement) maupun integrasi payment gateway pada versi ini**. Seluruh fitur PRD terbuka penuh untuk seluruh perusahaan terdaftar.
+5. **Algoritma Relevansi**: Pencocokan "Paling Relevan" menggunakan pencocokan teks pada judul, deskripsi, dan skills posisi — bukan model machine learning rekomendasi berbasis riwayat pengguna.
 
 ---
 
-*Dokumen ini menjadi acuan untuk penyusunan UI/UX Specification & Flow Document pada tahap berikutnya.*
+*Dokumen PRD Versi 4.0 ini adalah acuan resmi tertinggi untuk perancangan kontrak API, logika backend, antarmuka frontend, dan eksekusi skenario uji coba (Test Plan).*

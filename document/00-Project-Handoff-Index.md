@@ -16,14 +16,14 @@
 | # | Dokumen | Isi Utama | Kapan Dipakai |
 |---|---|---|---|
 | 1 | `01-PDD-RecruitFlow.md` | Masalah, target user, visi, business goals, success metrics | Konteks & alasan di balik keputusan produk |
-| 2 | `02-PRD-RecruitFlow.md` | 15 modul fitur, functional & non-functional requirements, user stories, acceptance criteria | **Acuan utama** saat menulis logika bisnis & validasi |
-| 3 | `03-UIUX-Spec-RecruitFlow.md` | User flow, information architecture, UX rules, navigation, 26 screen specification | Acuan struktur halaman & alur navigasi |
-| 4 | `04-System-Design-RecruitFlow.md` | Arsitektur, struktur backend, API design, database design, auth, deployment, ringkasan product backlog | **Acuan utama** saat setup project & implementasi backend |
-| 5 | `07-Product-Backlog-RecruitFlow.md` | Breakdown lengkap 15 Epic → Feature → Story → Task → Priority → Estimasi, saran pembagian sprint | Acuan perencanaan & pelacakan progres development |
-| 6 | `05-Design-System-RecruitFlow.md` | Warna, tipografi, komponen, spacing, responsive, animasi | Acuan setiap kali membuat/menyunting tampilan |
-| 7 | `06-Screen-Component-Tracker.md` | Checklist 26 screen × komponen dipakai, urutan batch pembuatan | Referensi silang mockup ↔ dokumen |
+| 2 | `02-PRD-RecruitFlow.md` | 7 modul utama (26 FR), functional & non-functional requirements, state machine, acceptance criteria | **Acuan utama** logika bisnis & validasi |
+| 3 | `03-UIUX-Spec-RecruitFlow.md` | User flow, information architecture, UX rules, spesifikasi 8-dimensi 29 layar lengkap | Acuan struktur halaman, interaksi, layout & API mapping |
+| 4 | `04-System-Architecture-Design-RecruitFlow.md` | Arsitektur, struktur backend, 70 API endpoint, physical DDL, pooling Port 6543, Resend SDK mailer | **Acuan utama** setup sistem & implementasi backend |
+| 5 | `05-Design-System-RecruitFlow.md` | Token warna FSM, tipografi, 24+ komponen UI, spacing, responsive breakpoint, animasi, Tailwind config | Acuan desain antarmuka & konsistensi UI |
+| 6 | `06-Product-Backlog-RecruitFlow.md` | Breakdown lengkap Epic → Feature → Story → Task → Priority → Estimasi, saran pembagian sprint | Acuan perencanaan & pelacakan progres development |
+| 7 | `07-Test-Plan-RecruitFlow.md` | Arsitektur 5 tingkatan testing, tooling Vitest/Supertest/Puppeteer, protokol seeding & defect governance | **Acuan utama** verifikasi mutu & kriteria kelayakan rilis |
 
-**Urutan baca yang disarankan**: PDD → PRD → System Design (bagian Database & API) sambil buka mockup terkait di UI/UX Spec, baru mulai coding modul per modul.
+**Urutan baca rantai kebenaran**: PDD (01) → PRD (02) → UI/UX Spec (03) → System Architecture (04) → Design System (05) → Product Backlog (06) → Test Plan (07).
 
 ---
 
@@ -34,37 +34,39 @@
 | `tailwind.config.js` | root output | Salin langsung ke root project frontend (Vite). Perlu install `@tailwindcss/typography` (lihat komentar di file). |
 | 24 mockup HTML | folder `screens/` | Referensi visual & struktur DOM per halaman — **bukan kode produksi**, perlu diterjemahkan ke komponen React saat development. |
 
-### Peta Mockup ↔ Kode Screen (UI/UX Spec)
+### Peta Mockup ↔ Kode Screen (UI/UX Spec v4.0)
 
-| File | Kode Screen | Route yang Dituju (lihat System Design §2.2–2.3) |
-|---|---|---|
-| `landing.html` | P-00 | `/` (home netral, dua sisi) |
-| `company-landing.html` | P-07 | `/untuk-perusahaan` |
-| `pricing.html` | P-08 | `/harga` |
-| `job-board.html` | P-01 | `/cari-lowongan` *(dipindah dari `/` — lihat catatan revisi di bawah)* |
-| `job-detail.html` | P-02 | `/jobs/:jobId` |
-| `company-profile.html` | P-03 | `/companies/:companySlug` |
-| `candidate-auth.html` | P-04 | `/candidate/register`, `/candidate/login` |
-| `application-form.html` | P-05 | `/jobs/:jobId/apply` |
-| `application-confirmation.html` | P-06 | — (state setelah submit) |
-| `candidate-dashboard.html` | C-01 | `/candidate/dashboard` |
-| `application-detail.html` | C-02 | `/candidate/dashboard/:applicationId` |
-| `saved-jobs.html` | C-03 | `/candidate/saved-jobs` |
-| `candidate-profile.html` | C-04 | `/candidate/profile` |
-| `candidate-documents.html` | C-05 | `/candidate/profile/documents` |
-| `company-register.html` | H-01 | `/company/register` |
-| `company-login.html` | H-02 | `/company/login` |
-| `hr-dashboard.html` | H-03 | `/dashboard` |
-| `company-profile-edit.html` | H-04 | `/dashboard/company-profile` |
-| `team-management.html` | H-05 | `/dashboard/team` |
-| `job-listings.html` | H-06 | `/dashboard/jobs` |
-| `job-form.html` | H-07 | `/dashboard/jobs/new`, `/dashboard/jobs/:jobId/edit` |
-| `pipeline-board.html` | H-08 | `/dashboard/jobs/:jobId/pipeline` |
-| `candidate-detail-hr.html` | H-09 (+ modal H-14, H-15) | `/dashboard/candidates/:candidateId` |
-| `candidate-database.html` | H-10 | `/dashboard/candidates` |
-| `interview-calendar.html` | H-11 | `/dashboard/calendar` |
-| `email-templates.html` | H-12 | `/dashboard/email-templates` |
-| `analytics.html` | H-13 | `/dashboard/analytics` |
+| File / Mockup | Kode Screen | Nama Layar | Route yang Dituju |
+|---|---|---|---|
+| `landing.html` | **P-00** | Landing Page Utama Dua Sisi | `/` |
+| `job-board.html` | **P-01** | Job Board Publik Terpadu | `/cari-lowongan` |
+| `job-detail.html` | **P-02** | Detail Lowongan & Persyaratan | `/jobs/:jobId` |
+| `company-profile.html` | **P-03** | Profil Perusahaan Publik | `/companies/:companySlug` |
+| `candidate-auth.html` | **P-04** | Portal Masuk & Daftar Talenta | `/candidate/login`, `/candidate/register` |
+| `application-form.html` | **P-05** | Formulir Lamaran Terstruktur 5 Langkah | `/jobs/:jobId/apply` |
+| `application-confirmation.html` | **P-06** | Konfirmasi Lamaran Berhasil | `/jobs/:jobId/success` |
+| `company-landing.html` | **P-07** | Landing Page Khusus Perusahaan | `/untuk-perusahaan` |
+| `pricing.html` | **P-08** | Halaman Paket & Biaya Langganan | `/harga` |
+| `candidate-dashboard.html` | **C-01** | Dasbor Utama & Ringkasan Lamaran | `/candidate/dashboard` |
+| `application-detail.html` | **C-02** | Rincian Status Lamaran & Timeline Seleksi | `/candidate/dashboard/:applicationId` |
+| `saved-jobs.html` | **C-03** | Daftar Lowongan Disimpan | `/candidate/saved-jobs` |
+| `candidate-profile.html` | **C-04** | Penyuntingan Profil Talenta | `/candidate/profile` |
+| `candidate-documents.html` | **C-05** | Pustaka Dokumen & Pengelolaan CV | `/candidate/profile/documents` |
+| `company-auth.html` | **H-01** | Portal Masuk & Daftar Akun HR | `/company/login`, `/company/register` |
+| `company-onboarding.html` | **H-02** | Pengisian Profil Perusahaan Awal | `/dashboard/onboarding` |
+| `hr-dashboard.html` | **H-03** | Dasbor Ringkasan & Operasional HR | `/dashboard` |
+| `company-profile-edit.html` | **H-04** | Manajemen Profil & Lokasi Perusahaan | `/dashboard/company-profile` |
+| `team-management.html` | **H-05** | Manajemen Anggota Tim & Wewenang | `/dashboard/team` |
+| `job-listings.html` | **H-06** | Manajemen Daftar Lowongan Kerja | `/dashboard/jobs` |
+| `job-form.html` | **H-07** | Formulir Pembuatan & Penyuntingan Lowongan | `/dashboard/jobs/new`, `/dashboard/jobs/:jobId/edit` |
+| `pipeline-board.html` | **H-08** | Papan Pipeline Pelamar Interaktif (Kanban) | `/dashboard/jobs/:jobId/pipeline` |
+| `candidate-detail-hr.html` | **H-09** | Detail Profil & Rekam Jejak Pelamar | `/dashboard/candidates/:candidateId` |
+| `candidate-database.html` | **H-10** | Pangkalan Data Seluruh Pelamar (Talent Pool) | `/dashboard/candidates` |
+| `interview-calendar.html` | **H-11** | Kalender & Jadwal Wawancara Terpadu | `/dashboard/calendar` |
+| `email-templates.html` | **H-12** | Manajemen Template Surat Keputusan Rekrutmen | `/dashboard/email-templates` |
+| `analytics.html` | **H-13** | Dasbor Analitik & Efisiensi Rekrutmen | `/dashboard/analytics` |
+| `interview-modal.html` | **H-14** | Modal Penjadwalan Wawancara & Deteksi Bentrok | Modal di `/dashboard/calendar` & `/dashboard/candidates/:id` |
+| `decision-modal.html` | **H-15** | Modal Konfirmasi Keputusan Akhir (Offer/Reject)| Modal di `/dashboard/candidates/:id` |
 
 ---
 
@@ -86,7 +88,7 @@ Mengikuti System Design §7.3 (Sequencing), disesuaikan dengan modul PRD & Epic 
 
 ## 5. Checklist Sebelum Mulai Coding
 
-- [ ] Buat project Supabase, catat `DATABASE_URL` & buat bucket Storage (`company-assets`, `candidate-documents`, `candidate-photos`) — lihat System Design §6.3.
+- [ ] Buat project Supabase, catat `DATABASE_URL` & buat 3 bucket Storage resmi: `logos` (Public), `banners` (Public), dan `resumes` (Private) — lihat Dokumen 04 §8.1.
 - [ ] Siapkan layanan email pihak ketiga (untuk offer/reject/reset password saja — lihat prinsip notifikasi PRD §3A).
 - [ ] Generate `JWT_ACCESS_SECRET` & `JWT_REFRESH_SECRET` terpisah.
 - [ ] Siapkan repo Railway (backend) & Vercel (frontend), catat domain masing-masing untuk `CORS_ORIGIN` & `VITE_API_BASE_URL`.
